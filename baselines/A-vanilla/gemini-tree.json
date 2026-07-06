@@ -1,0 +1,122 @@
+﻿[
+    {
+        "path":  "antigravity\\antigravity_state.pbtxt",
+        "bytes":  604,
+        "mtime":  "2026-07-06T12:43:06.4331437Z",
+        "sha256":  "4C8BFDC707558F68EFB657A4A3200D743186191AD3B6121A15E2F39C3850473D"
+    },
+    {
+        "path":  "antigravity\\installation_id",
+        "bytes":  36,
+        "mtime":  "2026-07-06T07:42:51.4155650Z",
+        "sha256":  "819AD7351DEFA120197C8F63DF402204A563745F828B1F2208CB3713651D7282"
+    },
+    {
+        "path":  "antigravity\\bin\\webm_encoder.exe",
+        "bytes":  14471168,
+        "mtime":  "2026-07-06T07:43:50.8785388Z",
+        "sha256":  ""
+    },
+    {
+        "path":  "antigravity\\builtin\\.checksum",
+        "bytes":  64,
+        "mtime":  "2026-07-06T07:42:51.7726531Z",
+        "sha256":  "FF094F133CE2B1B76A624D3DC607E94C3D7EE4933C7A66BB9D8BC8D63A3E6AB6"
+    },
+    {
+        "path":  "antigravity\\builtin\\keep.txt",
+        "bytes":  0,
+        "mtime":  "2026-07-06T07:42:51.7726531Z",
+        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "path":  "antigravity\\builtin\\skills\\antigravity_guide\\SKILL.md",
+        "bytes":  2945,
+        "mtime":  "2026-07-06T07:42:51.7705620Z",
+        "sha256":  "05C713F45523B2D1D1B119AC84C267F17409DB0EECA7B0ADD077CEDBA5445519"
+    },
+    {
+        "path":  "antigravity\\builtin\\skills\\antigravity_guide\\references\\app.md",
+        "bytes":  3852,
+        "mtime":  "2026-07-06T07:42:51.7710806Z",
+        "sha256":  "5ADBA0E3CA6DBF08D7AD1C2B136F88C067E175B454F0179FC7AA3C4783D9F5AB"
+    },
+    {
+        "path":  "antigravity\\builtin\\skills\\antigravity_guide\\references\\cli.md",
+        "bytes":  8647,
+        "mtime":  "2026-07-06T07:42:51.7716058Z",
+        "sha256":  "88221A6FF4548F592840F71D3EE6178F9B352864FDB69B974E28DC93A5D8BACA"
+    },
+    {
+        "path":  "antigravity\\builtin\\skills\\antigravity_guide\\references\\ide.md",
+        "bytes":  3399,
+        "mtime":  "2026-07-06T07:42:51.7716058Z",
+        "sha256":  "E3DA87B168F25F229A14A4547D7833E8E49191F1A85346F463C01F886A64693D"
+    },
+    {
+        "path":  "antigravity\\builtin\\skills\\antigravity_guide\\references\\sdk.md",
+        "bytes":  3130,
+        "mtime":  "2026-07-06T07:42:51.7721309Z",
+        "sha256":  "A20587F3CEDF7B8C6F7501F71FC7985D76C64007F7581690F68C0FFDC4357560"
+    },
+    {
+        "path":  "antigravity\\knowledge\\knowledge.lock",
+        "bytes":  0,
+        "mtime":  "2026-07-06T07:42:51.7668207Z",
+        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "path":  "antigravity-ide\\installation_id",
+        "bytes":  36,
+        "mtime":  "2026-07-06T07:48:25.4357075Z",
+        "sha256":  "08B09729164EF541D17BB7BAFE6202838963C6FDB9A9D4A5B57EACC71E9D364E"
+    },
+    {
+        "path":  "antigravity-ide\\knowledge\\knowledge.lock",
+        "bytes":  0,
+        "mtime":  "2026-07-06T07:48:25.9688720Z",
+        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "path":  "config\\.migrated",
+        "bytes":  0,
+        "mtime":  "2026-07-06T07:42:51.7689062Z",
+        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "path":  "config\\config.json",
+        "bytes":  125,
+        "mtime":  "2026-07-06T07:43:35.5239843Z",
+        "sha256":  "C062165810F14E63F62A072106588AB1BF03E80961E949D813DA4521FB919349"
+    },
+    {
+        "path":  "config\\mcp_config.json",
+        "bytes":  0,
+        "mtime":  "2026-07-06T07:42:51.7635039Z",
+        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "path":  "config\\plugins\\modern-web-guidance-plugin\\gemini-extension.json",
+        "bytes":  196,
+        "mtime":  "2026-07-06T07:43:50.7345118Z",
+        "sha256":  "7B20C3BB0DBC5F6DDDC3458BF8A266F0CAE5159081F8A2B052721EBA64209C4F"
+    },
+    {
+        "path":  "config\\plugins\\modern-web-guidance-plugin\\plugin.json",
+        "bytes":  286,
+        "mtime":  "2026-07-06T07:43:50.7350512Z",
+        "sha256":  "591D49831B827186F56A526851446BD6284860B493A2BFE390879D3EA9F33760"
+    },
+    {
+        "path":  "config\\plugins\\modern-web-guidance-plugin\\README.md",
+        "bytes":  62225,
+        "mtime":  "2026-07-06T07:43:50.7339609Z",
+        "sha256":  "07DBB2052E24F27C3A457B949EFA08AC2BE68EAF2645F425887D4133BB2DAE6F"
+    },
+    {
+        "path":  "config\\projects\\d542a97d-ddf4-4656-9d30-5e66ebcc1701.json",
+        "bytes":  616,
+        "mtime":  "2026-07-06T12:42:52.3983345Z",
+        "sha256":  "00D4DEBD92531F4A4B55B87A122377AF10E54761FE4296518F9EB79920B32E87"
+    }
+]

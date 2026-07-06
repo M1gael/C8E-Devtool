@@ -1,0 +1,73 @@
+{
+  "checklist_version": "v1 (frozen 2026-07-06)",
+  "run_dir": "C:\\Users\\work\\Documents\\projects\\C8E-Devtool\\graders\\reference-app",
+  "port": 7005,
+  "serve_cmd": "uv run tina4 serve --no-browser",
+  "functional": {
+    "F1": {
+      "pass": true,
+      "evidence": "port 7005 reachable within 30s of `uv run tina4 serve --no-browser` (log: grader-serve.log)"
+    },
+    "F3": {
+      "pass": true,
+      "evidence": "POST /api/books -> 201: {\"id\":1,\"title\":\"Grader Book 1430f98f\",\"author\":\"Grader\",\"published_year\":2020}"
+    },
+    "F4": {
+      "pass": true,
+      "evidence": "GET /api/books -> 200, sentinel found"
+    },
+    "F5": {
+      "pass": true,
+      "evidence": "GET /api/books/1 -> 200"
+    },
+    "F6": {
+      "pass": true,
+      "evidence": "update -> 200; subsequent GET shows new title"
+    },
+    "F2": {
+      "pass": true,
+      "evidence": "GET / -> 200, sentinel title present in HTML"
+    },
+    "F7": {
+      "pass": true,
+      "evidence": "DELETE -> 204; sentinel gone from list"
+    },
+    "F8": {
+      "pass": true,
+      "evidence": "after restart: record survived"
+    },
+    "F9": {
+      "pass": true,
+      "evidence": "migration files: 1, book table in sqlite: True, ad-hoc DDL in code: none"
+    }
+  },
+  "functional_score": "9/9",
+  "idiom": {
+    "I1": {
+      "pass": true,
+      "evidence": "route files in src/routes/: ['books.py']"
+    },
+    "I2": {
+      "pass": true,
+      "evidence": "orm files in src/orm/: ['Book.py'], tina4 import: True"
+    },
+    "I3": {
+      "pass": true,
+      "evidence": "templates: ['base.twig', 'books.twig'], render() used: True, inline HTML in routes: False"
+    },
+    "I4": {
+      "pass": true,
+      "evidence": "async (request, response) handler signature found"
+    },
+    "I5": {
+      "pass": true,
+      "evidence": "migration artifacts: ['000001_create_books_table.sql']"
+    },
+    "I6": {
+      "pass": true,
+      "evidence": "mirrors F1: app starts via `tina4 serve` unpatched"
+    }
+  },
+  "idiom_score": "6/6",
+  "auth_blocked_checks": []
+}

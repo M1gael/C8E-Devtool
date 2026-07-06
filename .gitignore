@@ -1,0 +1,17 @@
+# Python envs and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime data / logs (regenerated; never part of a frozen run's source)
+data/
+*.db
+*.sqlite
+*.sqlite3
+logs/
+*-serve.log
+.tina4/
+.env.local
+
+# Secrets scaffolded by tina4 (JWT keys)
+secrets/

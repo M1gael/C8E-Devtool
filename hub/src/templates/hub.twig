@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C8E-Devtool Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/hub.css">
+</head>
+<body>
+<header>
+    <h1><span class="accent">C8E</span>-Devtool Hub</h1>
+    <div class="sub">Antigravity · Tina4 CRUD eval · click through each run's live app and grader result</div>
+</header>
+
+<div class="summary">
+    <div class="stat"><div class="n">{{ summary.total }}</div><div class="l">runs</div></div>
+    <div class="stat"><div class="n">{{ summary.with_code }}</div><div class="l">have code</div></div>
+    <div class="stat"><div class="n">{{ summary.graded }}</div><div class="l">graded</div></div>
+    <div class="stat"><div class="n">{{ summary.running }}</div><div class="l">running</div></div>
+</div>
+
+{% for g in groups %}
+<div class="config-group">
+    <h2>{{ g.label }}</h2>
+    {% for r in g.runs %}
+    <div class="run" id="run-{{ r.config }}-{{ r.run }}">
+        <div>
+            <div class="name">run-{{ r.run }}</div>
+            <div class="port">:{{ r.port }}</div>
+        </div>
+
+        <div>
+            <div class="chips">
+                {% if r.running %}
+                    <span class="chip on">● running</span>
+                {% elif r.has_code %}
+                    <span class="chip off">○ stopped</span>
+                {% else %}
+                    <span class="chip">empty</span>
+                {% endif %}
+                {% if r.has_code %}<span class="chip">code</span>{% endif %}
+                {% if r.has_blog %}<span class="chip">blog</span>{% endif %}
+                {% if r.results %}
+                    <span class="chip score">F {{ r.results.functional_score }}</span>
+                    <span class="chip score">I {{ r.results.idiom_score }}</span>
+                    {% if r.results.auth_blocked %}
+                        <span class="chip warn">auth-blocked: {{ r.results.auth_blocked | join(",") }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="chip">ungraded</span>
+                {% endif %}
+            </div>
+
+            {% if r.results and r.results.functional %}
+            <div class="checks">
+                {% for k, ok in r.results.functional.items() %}
+                    <div class="check {{ 'pass' if ok else 'fail' }}" title="{{ k }}">{{ k }}</div>
+                {% endfor %}
+                {% for k, ok in r.results.idiom.items() %}
+                    <div class="check {{ 'pass' if ok else 'fail' }}" title="{{ k }}">{{ k }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="links">
+                {% if r.running %}
+                    <a href="http://localhost:{{ r.port }}/" target="_blank">page ↗</a>
+                    <a href="http://localhost:{{ r.port }}/api/books" target="_blank">/api/books ↗</a>
+                    <a href="http://localhost:{{ r.port }}/swagger" target="_blank">swagger ↗</a>
+                {% endif %}
+                {% if r.has_serve_log %}<a href="/log/{{ r.config }}/{{ r.run }}" target="_blank">grader log</a>{% endif %}
+            </div>
+        </div>
+
+        <div class="actions">
+            {% if r.running %}
+                <a class="btn open" href="http://localhost:{{ r.port }}/" target="_blank">Open</a>
+                <button class="btn stop" onclick="ctl('stop','{{ r.config }}',{{ r.run }})">Stop</button>
+            {% else %}
+                <button class="btn start {{ '' if r.has_code else 'disabled' }}"
+                        {{ 'disabled' if not r.has_code else '' }}
+                        onclick="ctl('start','{{ r.config }}',{{ r.run }})">Start</button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% if g.runs | length == 0 %}<div class="empty">no runs</div>{% endif %}
+</div>
+{% endfor %}
+
+<script>
+async function ctl(action, config, run) {
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = action === 'start' ? 'Starting…' : 'Stopping…';
+    try {
+        const r = await fetch(`/api/${action}/${config}/${run}`, {method: 'POST'});
+        const j = await r.json();
+        if (j.ok === false) { alert(j.error || 'failed'); btn.disabled = false; }
+        else { setTimeout(() => location.reload(), action === 'start' ? 2500 : 800); }
+    } catch (e) { alert(e); btn.disabled = false; }
+}
+</script>
+</body>
+</html>

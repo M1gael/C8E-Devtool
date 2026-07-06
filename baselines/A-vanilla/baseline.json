@@ -1,0 +1,83 @@
+﻿{
+    "meta":  {
+                 "config":  "A-vanilla",
+                 "captured":  "2026-07-06T13:05:45.4641640Z",
+                 "hostname":  "LAPTOP-E83L8I3H",
+                 "username":  "work"
+             },
+    "os":  {
+               "caption":  "Microsoft Windows 11 Home Single Language",
+               "version":  "10.0.26200",
+               "build":  "26200"
+           },
+    "antigravity":  {
+                        "install_dir":  "C:\\Users\\work\\AppData\\Local\\Programs\\Antigravity IDE",
+                        "installed":  true,
+                        "cli":  "C:\\Users\\work\\AppData\\Local\\Programs\\Antigravity IDE\\bin\\antigravity-ide.cmd",
+                        "version_output":  [
+                                               "1.107.0",
+                                               "e0b7a2bcf575cfba10528c4e7c10bd3ce2d7769a",
+                                               "x64"
+                                           ],
+                        "cli_on_path":  false
+                    },
+    "extensions":  {
+                       "cli_list":  [
+                                        "golang.go@0.54.0",
+                                        "llvm-vs-code-extensions.vscode-clangd@0.6.0",
+                                        "meta.pyrefly@1.1.1",
+                                        "ms-python.debugpy@2026.6.0",
+                                        "ms-python.python@2026.4.0",
+                                        "ms-python.vscode-python-envs@1.20.1",
+                                        "shopify.ruby-lsp@0.10.4"
+                                    ],
+                       "dir":  "C:\\Users\\work\\.antigravity-ide\\extensions",
+                       "dir_folders":  [
+                                           "golang.go-0.54.0-universal",
+                                           "llvm-vs-code-extensions.vscode-clangd-0.6.0-universal",
+                                           "meta.pyrefly-1.1.1-win32-x64",
+                                           "ms-python.debugpy-2026.6.0-win32-x64",
+                                           "ms-python.python-2026.4.0-universal",
+                                           "ms-python.vscode-python-envs-1.20.1-universal",
+                                           "shopify.ruby-lsp-0.10.4-universal"
+                                       ],
+                       "count_dir":  7
+                   },
+    "user_settings":  {
+                          "user_dir":  "C:\\Users\\work\\AppData\\Roaming\\Antigravity IDE\\User",
+                          "settings_json_exists":  false,
+                          "user_dir_entries":  [
+                                                   "globalStorage",
+                                                   "History",
+                                                   "snippets",
+                                                   "workspaceStorage"
+                                               ]
+                      },
+    "gemini":  {
+                   "dir":  "C:\\Users\\work\\.gemini",
+                   "file_count":  20,
+                   "agents_md":  false
+               },
+    "mcp_config_files":  [
+                             "C:\\Users\\work\\.gemini\\config\\mcp_config.json"
+                         ],
+    "toolchain":  {
+                      "python":  "Python 3.13.13",
+                      "pip":  "pip 26.0.1 from C:\\Users\\work\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pip (python 3.13)",
+                      "uv":  "uv 0.11.18 (e32666915 2026-06-01 x86_64-pc-windows-msvc)",
+                      "tina4":  "tina4 3.8.53",
+                      "git":  "git version 2.54.0.windows.1",
+                      "node":  "v24.16.0",
+                      "npm":  "11.13.0"
+                  },
+    "env_tina4":  [
+
+                  ],
+    "devkit":  {
+                   "dir":  "C:\\Users\\work\\Documents\\antigravity-devkit",
+                   "file_count":  14
+               },
+    "eval_ports_in_use":  [
+
+                          ]
+}

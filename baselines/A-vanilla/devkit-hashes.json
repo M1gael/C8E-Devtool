@@ -1,0 +1,86 @@
+﻿[
+    {
+        "path":  "extensions.txt",
+        "bytes":  3486,
+        "mtime":  "2026-07-06T07:47:17.1823418Z",
+        "sha256":  "97C8496E894B8E294C222FA0F6734FF632DD38680AE0D8C685496966E0134CC2"
+    },
+    {
+        "path":  "README.md",
+        "bytes":  5562,
+        "mtime":  "2026-07-06T07:47:17.1938089Z",
+        "sha256":  "41DA56AE7E7950E4B5A0C747E537ABE765F97E340727495C44F88B98F901D4B0"
+    },
+    {
+        "path":  "setup.ps1",
+        "bytes":  12120,
+        "mtime":  "2026-07-06T07:47:17.2013199Z",
+        "sha256":  "CBB535A2F5E4BA48C87706439C6FB70572E4EF82942C46B197834A8130618774"
+    },
+    {
+        "path":  "setup.sh",
+        "bytes":  6245,
+        "mtime":  "2026-07-06T07:47:17.2140784Z",
+        "sha256":  "69C8EFC37F00B8023D7B6421C9E7515E93D0A97FC514666B40B6DBEB8B37651C"
+    },
+    {
+        "path":  "config\\AGENTS.md",
+        "bytes":  2445,
+        "mtime":  "2026-07-06T07:47:17.2261126Z",
+        "sha256":  "D85355E69E7021CA41C3EAD1ADEAE41960CE249D85DAE5DA982D1AF7E0AC477B"
+    },
+    {
+        "path":  "config\\README.md",
+        "bytes":  5257,
+        "mtime":  "2026-07-06T07:47:17.2363072Z",
+        "sha256":  "7B2B3E53DB9E02464E486151471B4219F8791ADF81BA7C8429698901063A78F7"
+    },
+    {
+        "path":  "config\\.agents\\rules\\00-general.md",
+        "bytes":  821,
+        "mtime":  "2026-07-06T07:47:17.2483245Z",
+        "sha256":  "0696FE118EFE33897C7DED080C0865BCFFF458E6B8503C3B7EB2AD76CA014A7F"
+    },
+    {
+        "path":  "config\\.agents\\rules\\php.md",
+        "bytes":  1632,
+        "mtime":  "2026-07-06T07:47:17.2523595Z",
+        "sha256":  "2D185F8013C531E5B191E7C9E6E212333B8B55DF06E369203228665426AF5FF4"
+    },
+    {
+        "path":  "config\\.agents\\rules\\python.md",
+        "bytes":  1580,
+        "mtime":  "2026-07-06T07:47:17.2568754Z",
+        "sha256":  "0612A27797E91AE25DBBEA7B4746C448282B1AA81A047258D03D1827F57D1D83"
+    },
+    {
+        "path":  "config\\.agents\\rules\\ruby.md",
+        "bytes":  1486,
+        "mtime":  "2026-07-06T07:47:17.2614146Z",
+        "sha256":  "C8A3D69757D62ECC9E42DC5E1058D05A4FC96FF16A8F493F47F98C2B433873F4"
+    },
+    {
+        "path":  "config\\.agents\\rules\\sql.md",
+        "bytes":  1666,
+        "mtime":  "2026-07-06T07:47:17.2664045Z",
+        "sha256":  "EE2AF63DBA3CE01E14FAB3D3D6E0925B467E12059C83FF9B6D6FC8F8850A8DCF"
+    },
+    {
+        "path":  "config\\.agents\\rules\\typescript.md",
+        "bytes":  1661,
+        "mtime":  "2026-07-06T07:47:17.2714546Z",
+        "sha256":  "6B7B27B03E0626FE1AE116B4B8CF7BAC6BD87E657C9FFF32126BD1054C001D4E"
+    },
+    {
+        "path":  "config\\.vscode\\extensions.json",
+        "bytes":  1570,
+        "mtime":  "2026-07-06T07:47:17.2806183Z",
+        "sha256":  "AF5FA444A99A345EE612860ACB2346630638F9CC5548E665BA0F06C4C68099D0"
+    },
+    {
+        "path":  "config\\.vscode\\settings.json",
+        "bytes":  3067,
+        "mtime":  "2026-07-06T07:47:17.2859860Z",
+        "sha256":  "D9356038A0BFFD161DA3FDD661D98D629272664B74FF5E1AFD0A1EFC7F99BB3A"
+    }
+]

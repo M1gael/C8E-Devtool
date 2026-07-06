@@ -1,0 +1,30 @@
+﻿C:\Program Files (x86)\Common Files\Oracle\Java\javapath
+C:\Windows\system32
+C:\Windows
+C:\Windows\System32\Wbem
+C:\Windows\System32\WindowsPowerShell\v1.0\
+C:\Windows\System32\OpenSSH\
+C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common
+C:\Program Files\NVIDIA Corporation\NVIDIA App\NvDLISR
+C:\Program Files\Git\cmd
+C:\ProgramData\chocolatey\bin
+C:\tools\php85
+C:\ProgramData\ComposerSetup\bin
+C:\Program Files\OpenSSL-Win64\bin
+C:\Program Files\GitHub CLI\
+C:\Program Files\nodejs\
+C:\Program Files\dotnet\
+C:\Program Files\Docker\Docker\resources\bin
+C:\Users\work\AppData\Local\tina4
+C:\Users\work\.local\bin
+C:\Users\work\AppData\Local\Programs\Python\Python313\Scripts\
+C:\Users\work\AppData\Local\Programs\Python\Python313\
+C:\Users\work\AppData\Local\Programs\Python\Launcher\
+C:\Users\work\AppData\Local\Microsoft\WindowsApps
+C:\Users\work\AppData\Roaming\Composer\vendor\bin
+C:\Users\work\AppData\Local\Programs\Microsoft VS Code\bin
+C:\Users\work\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe
+C:\Users\work\AppData\Roaming\npm
+C:\Users\work\AppData\Local\Programs\Python\Python313
+C:\Program Files\nodejs
+C:\Program Files\Git\mingw64\bin
