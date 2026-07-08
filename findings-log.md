@@ -233,6 +233,23 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   cannot be relied on to do is behave the same way twice, finish the last mile of a
   feature, or handle secrets.
 
+- **run-3 ghost-scaffold incident + CLI language probes (2026-07-08 PM) — CORRECTED
+  note; no rerun had started.** Minutes after the dir reset, `index.php`
+  (`new \Tina4\App()` PHP bootstrap), a minimal `.env` (no secret) and empty
+  `migrations/src/tests` dirs appeared in the emptied `a-vanilla/run-3/`. Writer died
+  before autopsy; best-supported hypothesis: the ORIGINAL run-3 build session's
+  `tina4 serve` (PHP, port 7013, launched by the agent, never killed after truncation —
+  same lingering-server pattern noted at the v1 freeze) self-healed its scaffold at the
+  old path after the archive move orphaned it. Two files were accidentally committed
+  mid-incident (ed7ab32, harmless); cleanup commit removes them.
+  **Probes (scratch, empty dir):** `tina4 init` → interactive language picker
+  (python listed first), REFUSES non-interactively ("Use: tina4 init <language> <path>");
+  `tina4 serve` → refuses ("Not in a Tina4 project"), scaffolds nothing. So the CLI does
+  NOT default to PHP → original AG-A2-02 language drift was the AGENT'S choice at the
+  picker (or an explicit `tina4 init php`), not a CLI default → the v2.1 prompt pin is
+  the right control and should hold. run-3 re-verified empty (.gitkeep only) with all
+  eval ports free; hub restarted.
+
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
 - **FW-04 — `tina4 test` exits 0 when pytest is missing (silent success).** CLI 3.8.53, in
