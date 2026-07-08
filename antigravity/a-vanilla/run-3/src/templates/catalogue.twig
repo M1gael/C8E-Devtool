@@ -1,0 +1,74 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("books_tab") }} — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem; font-weight: 700;">{{ t("welcome_msg") }}</h1>
+    </div>
+
+    <!-- Search Form -->
+    <form action="/catalogue" method="GET" class="search-container">
+        <div class="search-input-wrapper">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="{{ t("search_placeholder") }}">
+            {% if current_lang == 'es' %}
+                <input type="hidden" name="lang" value="es">
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">{{ t("search_btn") }}</button>
+    </form>
+
+    <!-- Catalogue Grid -->
+    {% if books is empty %}
+        <p style="text-align: center; color: var(--text-muted); font-size: 1.2rem; padding: 3rem 0;">No books found matching your criteria.</p>
+    {% else %}
+        <div class="catalogue-grid">
+            {% for book in books %}
+                <div class="book-card">
+                    <div class="book-cover-wrapper">
+                        {% if book.cover_image %}
+                            {% if 'http' in book.cover_image %}
+                                <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="book-cover">
+                            {% else %}
+                                <img src="/uploads/{{ book.cover_image }}" alt="{{ book.title }}" class="book-cover" onerror="this.src='https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300'">
+                            {% endif %}
+                        {% else %}
+                            <img src="https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300" alt="{{ book.title }}" class="book-cover">
+                        {% endif %}
+                    </div>
+                    <div class="book-info">
+                        <h3 class="book-title">{{ book.title }}</h3>
+                        <p class="book-author">{{ t("author") }}: {{ book.author }}</p>
+                        <div class="book-meta">
+                            {% if book.available == 1 %}
+                                <span class="badge badge-success">{{ t("available") }}</span>
+                            {% else %}
+                                <span class="badge badge-warning">{{ t("borrowed") }}</span>
+                            {% endif %}
+                            <a href="/books/{{ book.id }}?lang={{ current_lang }}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">{{ t("details") }}</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="?q={{ query }}&page={{ page - 1 }}&lang={{ current_lang }}" class="page-btn">&laquo;</a>
+                {% endif %}
+                
+                {% for i in 1..total_pages %}
+                    <a href="?q={{ query }}&page={{ i }}&lang={{ current_lang }}" class="page-btn {% if i == page %}active{% endif %}">{{ i }}</a>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                    <a href="?q={{ query }}&page={{ page + 1 }}&lang={{ current_lang }}" class="page-btn">&raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

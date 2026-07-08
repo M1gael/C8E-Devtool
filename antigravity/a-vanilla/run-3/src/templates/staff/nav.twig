@@ -1,0 +1,11 @@
+<div class="glass-card" style="padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; background: rgba(30, 30, 50, 0.4); flex-wrap: wrap;">
+    <h3 style="margin-right: auto; font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; min-width: 180px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent);"></span>
+        {{ t("staff_dashboard") }}
+    </h3>
+    <a href="/staff/dashboard?lang={{ current_lang }}" class="nav-link {% if 'dashboard' in request.url %}active{% endif %}">Overview</a>
+    <a href="/staff/books?lang={{ current_lang }}" class="nav-link {% if 'books' in request.url %}active{% endif %}">{{ t("books_tab") }}</a>
+    <a href="/staff/members?lang={{ current_lang }}" class="nav-link {% if 'members' in request.url %}active{% endif %}">{{ t("members_tab") }}</a>
+    <a href="/staff/loans?lang={{ current_lang }}" class="nav-link {% if 'loans' in request.url %}active{% endif %}">{{ t("loans_tab") }}</a>
+    <a href="/staff/audit-logs?lang={{ current_lang }}" class="nav-link {% if 'audit-logs' in request.url %}active{% endif %}">{{ t("audit_logs_tab") }}</a>
+</div>

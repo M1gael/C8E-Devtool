@@ -1,0 +1,176 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("loans_tab") }} Management — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+{% include "staff/nav.twig" %}
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+    <!-- Active Loans Column -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            Active {{ t("loans_tab") }}
+        </h2>
+        
+        <div id="loans-table-alert" class="alert" style="display: none; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+        
+        {% if active_loans is empty %}
+            <p style="color: var(--text-muted); font-style: italic; padding: 2rem 0; text-align: center;">No books are currently out on loan.</p>
+        {% else %}
+            <div class="custom-table-container">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>{{ t("title") }}</th>
+                            <th>{{ t("member") }}</th>
+                            <th>{{ t("borrow_date") }}</th>
+                            <th>{{ t("due_date") }}</th>
+                            <th>{{ t("action") }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in active_loans %}
+                            <tr id="loan-row-{{ loan.id }}">
+                                <td><strong>{{ loan.book_title }}</strong></td>
+                                <td>
+                                    <strong>{{ loan.member_name }}</strong><br>
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">{{ loan.member_email }}</span>
+                                </td>
+                                <td>{{ loan.borrow_date }}</td>
+                                <td class="due-date-cell" data-due="{{ loan.due_date }}">{{ loan.due_date }}</td>
+                                <td>
+                                    <button onclick="recordReturn({{ loan.id }})" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                                        {{ t("record_return") }}
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Record Loan Form Column -->
+    <div class="glass-card" style="height: fit-content;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            {{ t("record_loan") }}
+        </h2>
+        
+        <div id="loan-form-alert" class="alert" style="display: none; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+        
+        <form id="loan-form">
+            <div class="form-group">
+                <label for="loan-book-id">{{ t("select_book") }}</label>
+                <select id="loan-book-id" name="book_id" class="form-control" required>
+                    <option value="" disabled selected>-- Select a book --</option>
+                    {% for book in available_books %}
+                        <option value="{{ book.id }}">{{ book.title }} (by {{ book.author }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="loan-member-id">{{ t("select_member") }}</label>
+                <select id="loan-member-id" name="member_id" class="form-control" required>
+                    <option value="" disabled selected>-- Select a member --</option>
+                    {% for m in members %}
+                        <option value="{{ m.id }}">{{ m.name }} ({{ m.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="loan-due-date">{{ t("due_date") }}</label>
+                <input type="date" id="loan-due-date" name="due_date" class="form-control" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+                {{ t("record_loan") }}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    // Default due date to 14 days from now
+    const today = new Date();
+    const twoWeeksLater = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+    document.getElementById('loan-due-date').value = twoWeeksLater.toISOString().split('T')[0];
+
+    const formAlert = document.getElementById('loan-form-alert');
+    const tableAlert = document.getElementById('loans-table-alert');
+
+    function showFormAlert(message, isSuccess = true) {
+        formAlert.textContent = message;
+        formAlert.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+        formAlert.style.display = 'block';
+        setTimeout(() => { formAlert.style.display = 'none'; }, 4000);
+    }
+    
+    function showTableAlert(message, isSuccess = true) {
+        tableAlert.textContent = message;
+        tableAlert.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+        tableAlert.style.display = 'block';
+        setTimeout(() => { tableAlert.style.display = 'none'; }, 4000);
+    }
+
+    // Color code overdue due dates
+    document.querySelectorAll('.due-date-cell').forEach(cell => {
+        const dueDate = new Date(cell.dataset.due);
+        const todayDate = new Date();
+        todayDate.setHours(0,0,0,0);
+        if (dueDate < todayDate) {
+            cell.style.color = 'var(--error)';
+            cell.style.fontWeight = 'bold';
+            cell.innerHTML += ' <span style="font-size:0.75rem; text-transform:uppercase;">[Overdue]</span>';
+        }
+    });
+
+    document.getElementById('loan-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const book_id = parseInt(document.getElementById('loan-book-id').value);
+        const member_id = parseInt(document.getElementById('loan-member-id').value);
+        const due_date = document.getElementById('loan-due-date').value;
+        
+        const payload = { book_id, member_id, due_date };
+        
+        try {
+            const response = await apiRequest('/api/loans', 'POST', payload);
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showFormAlert('Loan recorded successfully', true);
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showFormAlert(result.message || 'Failed to record loan', false);
+            }
+        } catch (err) {
+            showFormAlert('An error occurred. Please try again.', false);
+        }
+    });
+
+    async function recordReturn(loanId) {
+        if (!confirm('Are you sure you want to record the return of this book?')) return;
+        
+        try {
+            const response = await apiRequest(`/api/loans/${loanId}/return`, 'POST');
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showTableAlert('Book returned successfully', true);
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showTableAlert(result.message || 'Failed to record return', false);
+            }
+        } catch (err) {
+            showTableAlert('An error occurred. Please try again.', false);
+        }
+    }
+</script>
+{% endblock %}

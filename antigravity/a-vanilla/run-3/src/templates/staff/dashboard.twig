@@ -1,0 +1,33 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("staff_dashboard") }} — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+<!-- Include Staff Sub-Nav -->
+{% include "staff/nav.twig" %}
+
+<div class="glass-card">
+    <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem; font-weight: 600;">Welcome back, {{ user.name }}!</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2.5rem;">Here is a quick snapshot of the Lend Library system performance and status.</p>
+    
+    <!-- Stats Cards Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-num">{{ total_books }}</div>
+            <div class="stat-label">{{ t("total_books") }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">{{ total_members }}</div>
+            <div class="stat-label">{{ t("total_members") }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">{{ active_loans }}</div>
+            <div class="stat-label">{{ t("active_loans") }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">{{ returned_loans }}</div>
+            <div class="stat-label">{{ t("returned_loans") }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("books_tab") }} Management — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+{% include "staff/nav.twig" %}
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+    <!-- Books Table Column -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            {{ t("books_tab") }} List
+        </h2>
+        
+        <div class="custom-table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>{{ t("title") }}</th>
+                        <th>{{ t("author") }}</th>
+                        <th>{{ t("year") }}</th>
+                        <th>{{ t("isbn") }}</th>
+                        <th>{{ t("status") }}</th>
+                        <th>{{ t("actions") }}</th>
+                    </tr>
+                </thead>
+                <tbody id="books-table-body">
+                    {% for book in books %}
+                        <tr id="book-row-{{ book.id }}">
+                            <td>
+                                <strong class="row-title">{{ book.title }}</strong>
+                            </td>
+                            <td><span class="row-author">{{ book.author }}</span></td>
+                            <td><span class="row-year">{{ book.published_year }}</span></td>
+                            <td><span class="row-isbn">{{ book.isbn }}</span></td>
+                            <td>
+                                {% if book.available == 1 %}
+                                    <span class="badge badge-success">{{ t("available") }}</span>
+                                {% else %}
+                                    <span class="badge badge-warning">{{ t("borrowed") }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="editBook({{ book.id }}, '{{ book.title|replace("'", "\\'") }}', '{{ book.author|replace("'", "\\'") }}', {{ book.published_year }}, '{{ book.isbn }}', '{{ book.cover_image|default("") }}')" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
+                                    <button onclick="deleteBook({{ book.id }})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: var(--error);">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Form Column -->
+    <div class="glass-card" style="height: fit-content;">
+        <h2 id="form-title" style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            {{ t("add_book") }}
+        </h2>
+        
+        <div id="book-alert" class="alert" style="display: none; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+        
+        <form id="book-form">
+            <input type="hidden" id="book-id" name="id">
+            
+            <div class="form-group">
+                <label for="book-title">{{ t("title") }}</label>
+                <input type="text" id="book-title" name="title" class="form-control" placeholder="The Hobbit" required>
+            </div>
+            <div class="form-group">
+                <label for="book-author">{{ t("author") }}</label>
+                <input type="text" id="book-author" name="author" class="form-control" placeholder="J.R.R. Tolkien" required>
+            </div>
+            <div class="form-group">
+                <label for="book-year">{{ t("year") }}</label>
+                <input type="number" id="book-year" name="published_year" class="form-control" placeholder="1937" required>
+            </div>
+            <div class="form-group">
+                <label for="book-isbn">{{ t("isbn") }}</label>
+                <input type="text" id="book-isbn" name="isbn" class="form-control" placeholder="978-0261102217" required>
+            </div>
+            <div class="form-group">
+                <label for="book-cover">{{ t("cover_image") }} URL</label>
+                <input type="text" id="book-cover" name="cover_image" class="form-control" placeholder="https://example.com/cover.jpg">
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1;">{{ t("save") }}</button>
+                <button type="button" id="cancel-btn" class="btn btn-secondary" style="display: none; flex: 1;" onclick="resetForm()">{{ t("cancel") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    const form = document.getElementById('book-form');
+    const formTitle = document.getElementById('form-title');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const bookAlert = document.getElementById('book-alert');
+
+    function showAlert(message, isSuccess = true) {
+        bookAlert.textContent = message;
+        bookAlert.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+        bookAlert.style.display = 'block';
+        setTimeout(() => { bookAlert.style.display = 'none'; }, 4000);
+    }
+
+    function editBook(id, title, author, year, isbn, coverImage) {
+        document.getElementById('book-id').value = id;
+        document.getElementById('book-title').value = title;
+        document.getElementById('book-author').value = author;
+        document.getElementById('book-year').value = year;
+        document.getElementById('book-isbn').value = isbn;
+        document.getElementById('book-cover').value = coverImage;
+        
+        formTitle.textContent = '{{ t("edit_book") }}';
+        submitBtn.textContent = '{{ t("save") }}';
+        cancelBtn.style.display = 'block';
+        
+        document.getElementById('book-title').focus();
+    }
+
+    function resetForm() {
+        form.reset();
+        document.getElementById('book-id').value = '';
+        formTitle.textContent = '{{ t("add_book") }}';
+        submitBtn.textContent = '{{ t("save") }}';
+        cancelBtn.style.display = 'none';
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('book-id').value;
+        const title = document.getElementById('book-title').value;
+        const author = document.getElementById('book-author').value;
+        const published_year = document.getElementById('book-year').value;
+        const isbn = document.getElementById('book-isbn').value;
+        const cover_image = document.getElementById('book-cover').value;
+        
+        const payload = { title, author, published_year, isbn, cover_image };
+        
+        const url = id ? `/api/books/${id}` : '/api/books';
+        const method = id ? 'PUT' : 'POST';
+        
+        try {
+            const response = await apiRequest(url, method, payload);
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showAlert(id ? 'Book updated successfully' : 'Book added successfully', true);
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showAlert(result.message || 'Action failed', false);
+            }
+        } catch (err) {
+            showAlert('An error occurred. Please try again.', false);
+        }
+    });
+
+    async function deleteBook(id) {
+        if (!confirm('Are you sure you want to delete this book?')) return;
+        
+        try {
+            const response = await apiRequest(`/api/books/${id}`, 'DELETE');
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showAlert('Book deleted successfully', true);
+                document.getElementById(`book-row-${id}`).remove();
+            } else {
+                showAlert(result.message || 'Failed to delete book', false);
+            }
+        } catch (err) {
+            showAlert('An error occurred. Please try again.', false);
+        }
+    }
+</script>
+{% endblock %}

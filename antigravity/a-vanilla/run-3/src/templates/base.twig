@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t("app_name") }}{% endblock %}</title>
+    <link rel="stylesheet" href="/css/default.css">
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="/" class="logo">Lend <span>Library</span></a>
+            <nav class="nav-menu">
+                <a href="/catalogue" class="nav-link {% if request.url == '/' or request.url == '/catalogue' %}active{% endif %}">{{ t("books_tab") }}</a>
+                
+                {% if session.user %}
+                    <a href="/staff/dashboard" class="nav-link {% if '/staff/' in request.url %}active{% endif %}">{{ t("staff_dashboard") }}</a>
+                    <a href="/logout" class="nav-link">{{ t("logout") }} ({{ session.user.name }})</a>
+                {% else %}
+                    <a href="/login" class="btn btn-secondary">{{ t("login") }}</a>
+                {% endif %}
+                
+                {% if current_lang == 'en' %}
+                    <a href="?lang=es" class="lang-toggle">🇪🇸 Español</a>
+                {% else %}
+                    <a href="?lang=en" class="lang-toggle">🇬🇧 English</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% if flash_success %}
+            <div class="alert alert-success">{{ flash_success }}</div>
+        {% endif %}
+        {% if flash_error %}
+            <div class="alert alert-error">{{ flash_error }}</div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 {{ t("app_name") }} — Community Lending Library. Works as a website and a JSON API.</p>
+    </footer>
+
+    <script>
+        // Store JWT token locally on load if present in session
+        {% if session.token %}
+            localStorage.setItem('lend_token', '{{ session.token }}');
+        {% endif %}
+        
+        // Helper function for AJAX API requests
+        async function apiRequest(url, method = 'GET', body = null) {
+            const token = localStorage.getItem('lend_token');
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            
+            const options = {
+                method: method,
+                headers: headers
+            };
+            
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            const response = await fetch(url, options);
+            if (response.status === 401) {
+                localStorage.removeItem('lend_token');
+                window.location.href = '/login';
+                return null;
+            }
+            return response;
+        }
+    </script>
+    {% block javascripts %}{% endblock %}
+</body>
+</html>

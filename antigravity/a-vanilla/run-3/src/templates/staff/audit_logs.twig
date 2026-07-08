@@ -1,0 +1,74 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("audit_logs_tab") }} — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+{% include "staff/nav.twig" %}
+
+<div class="glass-card">
+    <h2 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+        {{ t("actions_audit") }} Trail
+    </h2>
+    
+    {% if logs is empty %}
+        <p style="color: var(--text-muted); font-style: italic; padding: 2rem 0; text-align: center;">No audit logs recorded yet.</p>
+    {% else %}
+        <div class="custom-table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">{{ t("user") }}</th>
+                        <th style="width: 150px;">{{ t("action") }}</th>
+                        <th>{{ t("details") }}</th>
+                        <th style="width: 200px;">{{ t("created_at") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                        <tr>
+                            <td>
+                                {% if log.staff_name %}
+                                    <strong>{{ log.staff_name }}</strong><br>
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">{{ log.staff_email }}</span>
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-style: italic;">System / Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge" style="background: rgba(217, 70, 239, 0.1); color: var(--accent); border: 1px solid rgba(217, 70, 239, 0.2);">
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td class="audit-details-cell">{{ log.details }}</td>
+                            <td><span style="font-size: 0.9rem;">{{ log.created_at }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    // Format JSON details on client side
+    document.querySelectorAll('.audit-details-cell').forEach(cell => {
+        try {
+            const rawText = cell.textContent.trim();
+            const data = JSON.parse(rawText);
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 0.25rem;">';
+            for (const [key, val] of Object.entries(data)) {
+                // Format key nicely (e.g. book_title -> Book Title)
+                const niceKey = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                html += `<div style="font-size: 0.85rem;"><span style="color: var(--text-muted); font-weight: 500;">${niceKey}:</span> <span style="color: var(--text-main);">${val}</span></div>`;
+            }
+            html += '</div>';
+            cell.innerHTML = html;
+        } catch (e) {
+            // Keep original text if parsing fails
+        }
+    });
+</script>
+{% endblock %}

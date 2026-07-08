@@ -1,0 +1,102 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ book.title }} — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="margin-bottom: 1.5rem;">
+        <a href="/catalogue?lang={{ current_lang }}" style="color: var(--primary); display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+            &larr; Back to Catalogue
+        </a>
+    </div>
+    
+    <div class="book-detail-container">
+        <!-- Cover Image Column -->
+        <div>
+            {% if book.cover_image %}
+                {% if 'http' in book.cover_image %}
+                    <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="detail-cover">
+                {% else %}
+                    <img src="/uploads/{{ book.cover_image }}" alt="{{ book.title }}" class="detail-cover" onerror="this.src='https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300'">
+                {% endif %}
+            {% else %}
+                <img src="https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300" alt="{{ book.title }}" class="detail-cover">
+            {% endif %}
+        </div>
+        
+        <!-- Info Column -->
+        <div class="detail-info">
+            <h1>{{ book.title }}</h1>
+            <p class="detail-author">{{ t("author") }}: {{ book.author }}</p>
+            
+            <div class="detail-metadata-grid">
+                <div>
+                    <div class="detail-label">{{ t("year") }}</div>
+                    <div class="detail-value">{{ book.published_year }}</div>
+                </div>
+                <div>
+                    <div class="detail-label">{{ t("isbn") }}</div>
+                    <div class="detail-value">{{ book.isbn }}</div>
+                </div>
+                <div>
+                    <div class="detail-label">{{ t("status") }}</div>
+                    <div class="detail-value" style="margin-top: 0.25rem;">
+                        {% if available == 1 %}
+                            <span class="badge badge-success">{{ t("available") }}</span>
+                        {% else %}
+                            <span class="badge badge-warning">{{ t("borrowed") }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Borrowing History Section -->
+            <div style="margin-top: 3rem;">
+                <h3 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    {{ t("borrow_history") }}
+                </h3>
+                
+                {% if history is empty %}
+                    <p style="color: var(--text-muted); font-style: italic;">{{ t("no_history") }}</p>
+                {% else %}
+                    <div class="custom-table-container">
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ t("member") }}</th>
+                                    <th>{{ t("borrow_date") }}</th>
+                                    <th>{{ t("due_date") }}</th>
+                                    <th>{{ t("status") }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in history %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ loan.member_name }}</strong><br>
+                                            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ loan.member_email }}</span>
+                                        </td>
+                                        <td>{{ loan.borrow_date }}</td>
+                                        <td>{{ loan.due_date }}</td>
+                                        <td>
+                                            {% if loan.returned == 1 %}
+                                                <span class="badge badge-success" style="font-size: 0.75rem;">
+                                                    {{ t("returned") }} ({{ loan.returned_date }})
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-warning" style="font-size: 0.75rem;">
+                                                    {{ t("borrowed") }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

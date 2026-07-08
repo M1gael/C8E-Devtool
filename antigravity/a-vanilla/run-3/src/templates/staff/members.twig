@@ -1,0 +1,164 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("members_tab") }} Management — {{ t("app_name") }}{% endblock %}
+
+{% block content %}
+{% include "staff/nav.twig" %}
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+    <!-- Members Table Column -->
+    <div class="glass-card">
+        <h2 style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            {{ t("members_tab") }} List
+        </h2>
+        
+        <div class="custom-table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>{{ t("name") }}</th>
+                        <th>{{ t("email") }}</th>
+                        <th>{{ t("join_date") }}</th>
+                        <th>{{ t("actions") }}</th>
+                    </tr>
+                </thead>
+                <tbody id="members-table-body">
+                    {% for member in members %}
+                        <tr id="member-row-{{ member.id }}">
+                            <td><strong class="row-name">{{ member.name }}</strong></td>
+                            <td><span class="row-email">{{ member.email }}</span></td>
+                            <td><span class="row-join-date">{{ member.join_date }}</span></td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="editMember({{ member.id }}, '{{ member.name|replace("'", "\\'") }}', '{{ member.email|replace("'", "\\'") }}', '{{ member.join_date }}')" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
+                                    <button onclick="deleteMember({{ member.id }})" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: var(--error);">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Form Column -->
+    <div class="glass-card" style="height: fit-content;">
+        <h2 id="form-title" style="font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            {{ t("add_member") }}
+        </h2>
+        
+        <div id="member-alert" class="alert" style="display: none; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+        
+        <form id="member-form">
+            <input type="hidden" id="member-id" name="id">
+            
+            <div class="form-group">
+                <label for="member-name">{{ t("name") }}</label>
+                <input type="text" id="member-name" name="name" class="form-control" placeholder="Alice Smith" required>
+            </div>
+            <div class="form-group">
+                <label for="member-email">{{ t("email") }}</label>
+                <input type="email" id="member-email" name="email" class="form-control" placeholder="alice@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="member-join-date">{{ t("join_date") }}</label>
+                <input type="date" id="member-join-date" name="join_date" class="form-control" required>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1;">{{ t("save") }}</button>
+                <button type="button" id="cancel-btn" class="btn btn-secondary" style="display: none; flex: 1;" onclick="resetForm()">{{ t("cancel") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    const form = document.getElementById('member-form');
+    const formTitle = document.getElementById('form-title');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const memberAlert = document.getElementById('member-alert');
+
+    // Default join date to today
+    document.getElementById('member-join-date').value = new Date().toISOString().split('T')[0];
+
+    function showAlert(message, isSuccess = true) {
+        memberAlert.textContent = message;
+        memberAlert.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
+        memberAlert.style.display = 'block';
+        setTimeout(() => { memberAlert.style.display = 'none'; }, 4000);
+    }
+
+    function editMember(id, name, email, joinDate) {
+        document.getElementById('member-id').value = id;
+        document.getElementById('member-name').value = name;
+        document.getElementById('member-email').value = email;
+        document.getElementById('member-join-date').value = joinDate;
+        
+        formTitle.textContent = '{{ t("edit_member") }}';
+        submitBtn.textContent = '{{ t("save") }}';
+        cancelBtn.style.display = 'block';
+        
+        document.getElementById('member-name').focus();
+    }
+
+    function resetForm() {
+        form.reset();
+        document.getElementById('member-id').value = '';
+        document.getElementById('member-join-date').value = new Date().toISOString().split('T')[0];
+        formTitle.textContent = '{{ t("add_member") }}';
+        submitBtn.textContent = '{{ t("save") }}';
+        cancelBtn.style.display = 'none';
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('member-id').value;
+        const name = document.getElementById('member-name').value;
+        const email = document.getElementById('member-email').value;
+        const join_date = document.getElementById('member-join-date').value;
+        
+        const payload = { name, email, join_date };
+        const url = id ? `/api/members/${id}` : '/api/members';
+        const method = id ? 'PUT' : 'POST';
+        
+        try {
+            const response = await apiRequest(url, method, payload);
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showAlert(id ? 'Member updated successfully' : 'Member added successfully', true);
+                setTimeout(() => { window.location.reload(); }, 1000);
+            } else {
+                showAlert(result.message || 'Action failed', false);
+            }
+        } catch (err) {
+            showAlert('An error occurred. Please try again.', false);
+        }
+    });
+
+    async function deleteMember(id) {
+        if (!confirm('Are you sure you want to delete this member?')) return;
+        
+        try {
+            const response = await apiRequest(`/api/members/${id}`, 'DELETE');
+            if (!response) return;
+            
+            const result = await response.json();
+            if (response.ok) {
+                showAlert('Member deleted successfully', true);
+                document.getElementById(`member-row-${id}`).remove();
+            } else {
+                showAlert(result.message || 'Failed to delete member', false);
+            }
+        } catch (err) {
+            showAlert('An error occurred. Please try again.', false);
+        }
+    }
+</script>
+{% endblock %}
