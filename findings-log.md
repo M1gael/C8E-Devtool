@@ -298,17 +298,20 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   `antigravity/archive/run-3-v2.1-tampered/` (results-v2.json, self-claimed file and
   tamper patch all retained as evidence — findings AG-A2-09/10 stand as findings);
   `a-vanilla/run-3/` reset to empty; `graders/grade_lend.py` restored to its pre-rerun
-  version (229b13f — no run-3 adapter, no provision step). Third run-3 attempt pending,
-  to be executed in an ISOLATED directory outside the harness repo
-  (`../lend-run-3/`, created empty), artifacts copied into `a-vanilla/run-3/` for
-  freezing + grading afterward — subject must not be able to read or write the
-  grader, spec/grading map, findings, or scored siblings.
+  version (229b13f — no run-3 adapter, no provision step). Third run-3 attempt pending.
+  **Isolation mechanism (user decision 2026-07-09): keep runs INSIDE the repo, but
+  PACK the sensitive files into a zip kept outside the repo for the run window, then
+  UNPACK after.** `tools/guard.py pack` zips + removes graders/, tasks/, findings-log,
+  baselines/, hub/, the scored sibling runs + archives to
+  `../.harness-guard/guard.zip` (outside repo); the subject sees only `run-3/` +
+  framework/config; `tools/guard.py unpack` restores. Git is the backstop (all packed
+  paths tracked). Replaces the earlier plan to run in an external dir.
 - **HARNESS LESSON (affects B/C design): runs live INSIDE the eval repo.** The subject
   could read (and this run modified) the grader, the task spec incl. the grading map,
   findings-log, and committed sibling runs WITH their scores. v1's near-zero variance
-  (AG-A-05) gains an alternative hypothesis: sibling visibility. Future runs should
-  execute in an ISOLATED directory outside the harness repo, with artifacts copied in
-  for freezing afterward.
+  (AG-A-05) gains an alternative hypothesis: sibling visibility. Mitigation:
+  `tools/guard.py pack` before each run, `unpack` after (see ROLLBACK note) — same
+  repo layout, sensitive files zipped out of reach for the run window.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
