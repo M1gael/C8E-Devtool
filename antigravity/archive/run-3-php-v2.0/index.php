@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Load ORM models manually (PSR-4 autoloading requires namespaces)
+foreach (glob(__DIR__ . '/src/orm/*.php') as $filename) {
+    require_once $filename;
+}
+
 $app = new \Tina4\App();
 
 // Local development (fastest — built-in socket server with WebSocket support):

@@ -113,12 +113,14 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   baseline. (Caveat: Antigravity's own internal defaults can't be audited from outside the
   IDE; nothing was added on our side.)
 - **v2 config-A run outcomes + cost (2026-07-08).** All three vanilla Lend runs done
-  building; the Gemini session budget is now exhausted. run-1 (7011) completed —
-  Antigravity self-reported ~77% (metric unconfirmed: self-assessed completion vs. other).
-  run-2 (7012) completed. run-3 (7013) ran OUT of session budget mid-build → truncated /
-  incomplete; **kept as-is, not wiped** (it's evidence of how far vanilla gets before dying).
-  Config-A cost baseline: ~1/3 of one Gemini session per run (2 full + 1 truncated = one
-  session). **v2 de-saturation confirmed:** v1's trivial CRUD saturated to 9/9·6/6 + "done"
+  building; the Gemini session budget is now exhausted. Session-meter readings (user's
+  IDE meter, % remaining): 100% → **77%** after run-1 → **35%** after run-2 → **0%**
+  mid-run-3. Per-run burn: **run-1 ≈23%, run-2 ≈42%, run-3 ≥35% (insufficient —
+  truncated)**. (Correction: an earlier note read the 77% as a self-assessed completion
+  estimate — it was the session meter.) Noteworthy: run-2 burned ~2× run-1 at similar
+  wall time; run-2 is also the run that self-pulled docs. run-3 truncated + PHP →
+  invalid; PHP build preserved in git (commit 0468d0e) and archived to
+  `antigravity/archive/run-3-php-v2.0/`; run-3 to be RERUN on spec v2.1. **v2 de-saturation confirmed:** v1's trivial CRUD saturated to 9/9·6/6 + "done"
   in every run; the richer Lend task drops run-1 to a self-assessed 77% and kills run-3 on
   budget — the redesign is measuring headroom v1 couldn't. **run-1 wall-clock build time =
   22m 14s** (1,334 s; sum of timed work segments 42s + 15m + 3m42s + 1m37s + 48s + 25s);
@@ -193,6 +195,43 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   "page differs" (false-positive on any dynamic HTML) — now requires an actual translated
   string absent from the EN page; F7/F11 no longer accept 401 as "clear rejection".
   Determinism: run-1 scored 27/30 identically on consecutive runs of the final grader.
+
+- **v2 BLOG-fidelity check (2026-07-08).** No v1-style fabrication found in either blog.
+  run-2's BLOG is accurate throughout (7/7 tests, swagger URL, queue design, i18n — all
+  match measurements). run-1's BLOG oversells one feature: a whole section on
+  "Concurrent-Safe Internationalization" for a language switch that is unreachable by its
+  audience (AG-A2-06) — parts built, end-to-end never driven; softer echo of v1's AG-A-04
+  pattern. run-1's blog is otherwise truthful (409, PBKDF2, queue, audit all real).
+- **AG-A2-08 — cross-check candidate from run-2's BLOG:** claims Tina4's `TestClient`
+  "executes route handlers directly without firing their middleware", worked around by
+  duplicating the auth check inside each handler. If true, middleware-protected routes are
+  untestable via TestClient as shipped — framework-behavior claim worth an isolated probe
+  (EOD queue). Claim is the agent's, unverified.
+
+- **v2 config-A CONSENSUS (2026-07-08).** Verdict: vanilla Antigravity/Gemini builds a
+  genuinely credible Tina4 app under a real task — the weakness is not code quality but
+  run-to-run unpredictability plus three systematic gaps.
+  (1) *Work is real:* 27/30 + 28/30 with earned passes — auth enforced dev+prod (v1's
+  headline failure did not recur), real queue/email evidence, restart persistence, audit
+  attribution, swagger, self-tests verified green. No blog fabrication (contrast v1
+  AG-A-07); worst blog offence is run-1 overselling its unreachable i18n.
+  (2) *Clone problem dead:* two genuinely different architectures (JWT + default-auth +
+  hand-rolled queue polling + unittest vs middleware + events + ServiceRunner + framework
+  I18n + up/down migrations + tina4 test). v1's byte-identical-runs pathology gone once
+  the task got rich.
+  (3) *Systematic gaps — the model's signature, same in every run:* file upload silently
+  downgraded to a URL string field (both runs, independently — AG-A2-05); secret hygiene
+  wrong in all three runs, each differently (AG-A2-07 + run-3's secret-in-.env); features
+  built but never driven end-to-end as a user (run-1 language switch no-ops for anonymous
+  visitors — AG-A2-06).
+  (4) *Config-A's real story is behavioral variance:* identical prompt → one bare run,
+  two runs self-fetching docs, one run switching language entirely (PHP). Directional
+  hint, n=2, not a claim: the docs-fed run (run-2) used the most framework-native
+  machinery and scored highest — the config-B hypothesis in miniature; B/C exist to test
+  exactly this with the context controlled.
+  Bottom line: given a real task, vanilla Gemini produces a credible Tina4 app; what it
+  cannot be relied on to do is behave the same way twice, finish the last mile of a
+  feature, or handle secrets.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 

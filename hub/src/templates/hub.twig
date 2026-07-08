@@ -40,7 +40,12 @@
                 {% endif %}
                 {% if r.has_code %}<span class="chip">code</span>{% endif %}
                 {% if r.has_blog %}<span class="chip">blog</span>{% endif %}
-                {% if r.results %}
+                {% if r.results and r.results.kind == "v2" %}
+                    <span class="chip score" title="{{ r.results.task }}">Lend {{ r.results.score }}</span>
+                    {% for t in r.results.tiers %}
+                        <span class="chip score">{{ t.tier }} {{ t.score }}</span>
+                    {% endfor %}
+                {% elif r.results %}
                     <span class="chip score">F {{ r.results.functional_score }}</span>
                     <span class="chip score">I {{ r.results.idiom_score }}</span>
                     {% if r.results.auth_blocked %}
@@ -51,7 +56,13 @@
                 {% endif %}
             </div>
 
-            {% if r.results and r.results.functional %}
+            {% if r.results and r.results.kind == "v2" %}
+            <div class="checks">
+                {% for c in r.results.checks %}
+                    <div class="check {{ 'pass' if c.ok else 'fail' }}" title="{{ c.label }}">{{ c.id }}</div>
+                {% endfor %}
+            </div>
+            {% elif r.results and r.results.functional %}
             <div class="checks">
                 {% for k, ok in r.results.functional.items() %}
                     <div class="check {{ 'pass' if ok else 'fail' }}" title="{{ k }}">{{ k }}</div>

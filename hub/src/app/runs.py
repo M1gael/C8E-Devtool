@@ -61,14 +61,40 @@ def _has_code(run_dir: Path) -> bool:
 
 
 def _results_summary(run_dir: Path) -> dict | None:
+    # v2 grader (grade_lend.py) takes precedence when both artifacts exist
+    v2 = run_dir / "results-v2.json"
+    if v2.is_file():
+        try:
+            data = json.loads(v2.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return {"kind": "v2", "error": "unreadable results-v2.json"}
+        checks = data.get("checks") or {}
+        tiers: dict[str, list[int]] = {}
+        for cid, c in checks.items():
+            if c.get("ok") is None:  # skipped checks don't count
+                continue
+            t = tiers.setdefault(cid[0], [0, 0])
+            t[1] += 1
+            t[0] += c.get("ok") is True
+        return {
+            "kind": "v2",
+            "score": data.get("score"),
+            "task": (data.get("meta") or {}).get("task", ""),
+            "tiers": [{"tier": k, "score": f"{p}/{n}"}
+                      for k, (p, n) in sorted(tiers.items())],
+            "checks": [{"id": cid, "ok": c.get("ok"),
+                        "label": f"{cid} {c.get('title', '')} — {c.get('note', '') or 'ok'}"}
+                       for cid, c in checks.items()],
+        }
     rf = run_dir / "results.json"
     if not rf.is_file():
         return None
     try:
         data = json.loads(rf.read_text())
     except (ValueError, OSError):
-        return {"error": "unreadable results.json"}
+        return {"kind": "v1", "error": "unreadable results.json"}
     return {
+        "kind": "v1",
         "functional_score": data.get("functional_score"),
         "idiom_score": data.get("idiom_score"),
         "auth_blocked": data.get("auth_blocked_checks", []),
@@ -128,7 +154,8 @@ def start(config: str, run_n: int, serve_cmd: str = DEFAULT_SERVE) -> dict:
         return {"ok": True, "port": port, "note": "already up"}
     # inject the assigned port; the generated app should honour PORT (F1)
     import os
-    env = dict(os.environ, PORT=str(port), TINA4_OVERRIDE_CLIENT="true")
+    env = dict(os.environ, PORT=str(port), TINA4_PORT=str(port),
+               TINA4_OVERRIDE_CLIENT="true")
     log = open(run_dir / "hub-serve.log", "ab")
     proc = subprocess.Popen(shlex.split(serve_cmd), cwd=str(run_dir),
                             stdout=log, stderr=subprocess.STDOUT, env=env)
