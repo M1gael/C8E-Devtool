@@ -21,7 +21,9 @@ Zip is verified (testzip + file count) before any original is deleted. pack()
 refuses to run on a dirty working tree — the commit made right before pack is
 the real backstop; the zip is just convenience.
 """
+import os
 import shutil
+import stat
 import subprocess
 import sys
 import zipfile
@@ -69,6 +71,12 @@ def _keep_chain(keep_rel: str):
     return chain, rel_parts
 
 
+def _force_remove(func, path, exc_info):
+    # git objects are read-only on Windows; clear the bit and retry once
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def _files(p: Path):
     if p.is_file():
         yield p
@@ -113,7 +121,13 @@ def pack(keep_rel: str):
     MARKER.write_text(keep_rel, encoding="utf-8")
     STUB.write_text(STUB_SRC % {"repo": str(REPO), "vault": str(VAULT)}, encoding="utf-8")
     for entry in to_zip:
-        shutil.rmtree(entry) if entry.is_dir() else entry.unlink()
+        if entry.is_dir():
+            shutil.rmtree(entry, onexc=_force_remove)
+        else:
+            try:
+                entry.unlink()
+            except PermissionError:
+                _force_remove(entry.unlink, entry, None)
     print("packed %d files -> %s" % (count, VAULT))
     print("kept live: %s (only this is visible in the repo now)" % keep_rel)
     print("tools/guard.py is zipped too — to restore later run:")

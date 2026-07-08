@@ -13,7 +13,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Tool | Config | Run 1 | Run 2 | Run 3 | Ledger |
 |------|--------|-------|-------|-------|--------|
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
-| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | — rolled back (tampered attempt archived); 3rd attempt pending, ISOLATED dir | a-vanilla/ · results-v2.json per run |
+| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ▶ 3rd attempt built under `guard.py` isolation, ungraded (2nd attempt tampered, rolled back + archived) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending) |
 | Antigravity v1.107.0 | C — +MCP | — | — | — | (pending) |
 
@@ -312,6 +312,38 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   (AG-A-05) gains an alternative hypothesis: sibling visibility. Mitigation:
   `tools/guard.py pack` before each run, `unpack` after (see ROLLBACK note) — same
   repo layout, sensitive files zipped out of reach for the run window.
+
+### run-3 third attempt — clean build under guard.py isolation (2026-07-09)
+
+- **First real exercise of `tools/guard.py`.** Rewritten same day from a curated
+  "sensitive paths" list to an inverted allow-list (keep only the active run dir live,
+  zip literally everything else — including `.git` and the tool's own `tools/`
+  directory). `pack antigravity/a-vanilla/run-3` run before the prompt was handed off;
+  repo root held nothing but `antigravity/a-vanilla/run-3/.gitkeep` for the run's
+  duration. Prompt started **12:32**, v2.1 wording (Python-pinned), port 7013.
+- **Tooling bug hit + fixed mid-cycle:** `pack`'s cleanup step used bare
+  `shutil.rmtree`/`unlink`; git's loose objects are read-only on Windows, so the first
+  delete (`.git/objects/...`) raised `PermissionError` and crashed the removal loop
+  before it reached anything else. Zip write + `testzip` verification had already
+  completed successfully by that point, so nothing was lost — confirmed by `git fsck
+  --full` (clean) and HEAD match on the untouched `.git`, then independently by
+  listing the vault's zip contents (7,641 files, `testzip` OK, `.git` 129 objects,
+  `b-devkit`/`c-mcp` placeholders all present). Finished the interrupted delete with a
+  read-only-safe pass, then patched `pack()` itself (`onexc` chmod-and-retry) so this
+  can't recur. Full restore afterward verified the same way (`git fsck` clean, HEAD
+  `7799bca`, all 11 root entries back).
+- **Timing/burn:** 9m 23s wall (563 s; 7m + 2m + 23s), **20% session burn**. Config-A
+  v2 run-3 now has two attempts: the tampered/rolled-back one (34% burn, invalidated,
+  doesn't count as a result) and this clean one (20% burn, the one to be graded).
+  Cumulative run-3 cost across both attempts: 54%.
+  Updated burns: run-1 ≈23%, run-2 ≈42%, run-3 (valid attempt) ≈20%.
+- **Build looks real, Python, on-pin at a glance:** `pyproject.toml` + `uv.lock` (no
+  `composer.json`), `migrations/000001_initial_schema.sql`, `src/{app,orm,routes,
+  templates,locales,seeds,scss,public}`, `tests/`, `BLOG.md`. `.gitignore` correctly
+  excludes `.venv/`, `data/`, `logs/`, `secrets/`, `.env` — `.env`'s real
+  `TINA4_SECRET` will not get committed. Two loose ends checked and cleared:
+  `data/.broken` is an empty, unreferenced directory (harmless); `secrets/` is empty.
+  Not yet graded.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
