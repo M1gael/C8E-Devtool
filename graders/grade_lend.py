@@ -75,6 +75,29 @@ ADAPTERS = {
         "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
         "staff_names": ["Librarian", "staff@library.com"],
     },
+    # run-3 (v2.1 rerun) seeds NO staff; its only provisioning mechanism is an open
+    # @noauth POST /api/register (swagger-described "Development & Testing"). The
+    # "provision" step below follows that documented flow so the staff checks can run;
+    # the open-registration posture itself is logged as a security finding, not here.
+    # (Its earlier attempt to add this adapter itself — with an F4 fallback baked into
+    # the check — is preserved in antigravity/archive/run-3-grader-tamper.patch.)
+    "run-3": {
+        "provision": ("/api/register", {"name": "Grader Staff",
+                                        "email": "grader@example.com",
+                                        "password": "grader-pw-2026"}),
+        "login": ("/api/login", {"email": "grader@example.com", "password": "grader-pw-2026"}),
+        "books": "/api/books",
+        "book": "/api/books/{id}",
+        "members": "/api/members",
+        "loans": "/api/loans",
+        "loan_return": lambda loan_id, book_id: ("/api/loans/return/%s" % loan_id, {}),
+        "audit": "/api/audit-logs",
+        "search_param": "search", "page_param": "page", "limit_param": "limit",
+        "loan_body": lambda bid, mid: {"book_id": bid, "member_id": mid, "due_date": "2026-08-01"},
+        "lang_setup": None, "lang_page": "/?lang=es", "locale_file": "src/locales/es.json",
+        "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
+        "staff_names": ["Grader Staff", "grader@example.com"],
+    },
 }
 
 # ---------------------------------------------------------------- helpers
@@ -244,6 +267,9 @@ class Grader:
         def f4():
             # seeds may land asynchronously after the port answers (run-2 seeds on the
             # app.ready event) — retry up to 15s; a genuinely broken login still fails
+            if "provision" in a:  # app seeds no staff; use its documented signup flow
+                ppath, pbody = a["provision"]
+                req2("POST", self.url(ppath), pbody)
             path, creds = a["login"]
             deadline, st, tries = time.time() + 15, 0, 0
             while time.time() < deadline:

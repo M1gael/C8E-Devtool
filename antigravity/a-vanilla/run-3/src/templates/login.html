@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("login") }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 450px; margin: 3rem auto;">
+    <div class="panel">
+        <h2 class="modal-title">{{ t("login") }}</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">{{ t("staff_portal") }}</p>
+        
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="email">{{ t("member_email") }}</label>
+                <input type="email" name="email" id="email" class="form-control" required placeholder="staff@library.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" class="form-control" required placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                {{ t("login") }}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

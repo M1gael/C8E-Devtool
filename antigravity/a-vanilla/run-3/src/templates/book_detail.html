@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <a href="/" class="btn btn-secondary btn-sm" style="margin-bottom: 1.5rem;">&larr; {{ t("clear_button") }}</a>
+    
+    <div class="detail-layout">
+        <div class="detail-cover">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image }}" alt="{{ book.title }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            {% endif %}
+            <div class="book-cover-placeholder" style="display: {% if book.cover_image %}none{% else %}flex{% endif %}; height: 450px; justify-content: center; align-items: center; background: #111827; font-size: 6rem;">📚</div>
+        </div>
+        
+        <div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; font-weight: 800;">{{ book.title }}</h1>
+            <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 1.5rem;">by <strong>{{ book.author }}</strong></p>
+            
+            <div class="panel" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                    <span class="book-badge {% if is_available %}badge-available{% else %}badge-borrowed{% endif %}" style="position: static;">
+                        {% if is_available %}{{ t("available") }}{% else %}{{ t("borrowed") }}{% endif %}
+                    </span>
+                </div>
+                {% if not is_available and active_loan %}
+                    <p style="font-size: 0.95rem; color: var(--text-secondary);">
+                        {{ t("due_date") }}: <strong style="color: var(--danger-color);">{{ active_loan.due_date }}</strong>
+                    </p>
+                {% endif %}
+            </div>
+
+            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div>
+                    <label>{{ t("book_year") }}</label>
+                    <p style="font-weight: 600;">{{ book.published_year }}</p>
+                </div>
+                <div>
+                    <label>{{ t("book_isbn") }}</label>
+                    <p style="font-weight: 600;">{{ book.isbn }}</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">{{ t("history") }}</h3>
+            {% if loans %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ t("borrow_date") }}</th>
+                                <th>{{ t("due_date") }}</th>
+                                <th>{{ t("return_date") }}</th>
+                                {% if staff %}
+                                    <th>{{ t("member_name") }}</th>
+                                {% endif %}
+                                <th>{{ t("status") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                                <tr>
+                                    <td>{{ loan.borrow_date }}</td>
+                                    <td>{{ loan.due_date }}</td>
+                                    <td>{{ loan.returned_date | default("-") }}</td>
+                                    {% if staff %}
+                                        <td>{{ loan.member_name }} ({{ loan.member_email }})</td>
+                                    {% endif %}
+                                    <td>
+                                        <span class="audit-log-badge {% if loan.returned == 1 %}action-return{% else %}action-loan{% endif %}">
+                                            {% if loan.returned == 1 %}{{ t("returned") }}{% else %}{{ t("not_returned") }}{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">{{ t("no_history") }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

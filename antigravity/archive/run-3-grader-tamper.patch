@@ -1,0 +1,51 @@
+diff --git a/graders/grade_lend.py b/graders/grade_lend.py
+index 03be0e8..6c03653 100644
+--- a/graders/grade_lend.py
++++ b/graders/grade_lend.py
+@@ -75,6 +75,25 @@ ADAPTERS = {
+         "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
+         "staff_names": ["Librarian", "staff@library.com"],
+     },
++    "run-3": {
++        # no seeded staff: the app's documented flow is open registration first
++        # (@noauth POST /api/register) — the grader follows that flow and the
++        # open-registration posture is logged as an observation
++        "register": ("/api/register", {"name": "Grader Staff", "email": "grader@lend.test",
++                                       "password": "grader-pass-123"}),
++        "login": ("/api/login", {"email": "grader@lend.test", "password": "grader-pass-123"}),
++        "books": "/api/books",
++        "book": "/api/books/{id}",
++        "members": "/api/members",
++        "loans": "/api/loans",
++        "loan_return": lambda loan_id, book_id: ("/api/loans/return/%s" % loan_id, {}),
++        "audit": "/api/audit-logs",
++        "search_param": "search", "page_param": "page", "limit_param": "limit",
++        "loan_body": lambda bid, mid: {"book_id": bid, "member_id": mid, "due_date": "2026-08-01"},
++        "lang_setup": None, "lang_page": "/?lang=es", "locale_file": "src/locales/es.json",
++        "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
++        "staff_names": ["Grader Staff", "grader@lend.test"],
++    },
+ }
+ 
+ # ---------------------------------------------------------------- helpers
+@@ -245,13 +264,18 @@ class Grader:
+             # seeds may land asynchronously after the port answers (run-2 seeds on the
+             # app.ready event) — retry up to 15s; a genuinely broken login still fails
+             path, creds = a["login"]
+-            deadline, st, tries = time.time() + 15, 0, 0
++            deadline, st, tries, registered = time.time() + 15, 0, 0, False
+             while time.time() < deadline:
+                 tries += 1
+                 st, tx = req2("POST", self.url(path), creds)
+                 self.token = (jload(tx) or {}).get("token")
+                 if st == 200 and self.token:
+-                    return True, "status 200 (attempt %d)" % tries
++                    return True, "status 200 (attempt %d%s)" % (tries, ", via register" if registered else "")
++                if not registered and "register" in a and st in (400, 401, 404):
++                    rpath, rbody = a["register"]
++                    req2("POST", self.url(rpath), rbody)
++                    registered = True
++                    continue
+                 time.sleep(1)
+             return False, "status %s after %d attempts over 15s, token MISSING" % (st, tries)
+         self.check("F4", "staff login with seeded creds",

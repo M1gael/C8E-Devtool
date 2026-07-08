@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("books_management") }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="sidebar">
+        <a href="/dashboard" class="sidebar-link">{{ t("dashboard") }}</a>
+        <a href="/dashboard/books" class="sidebar-link active">{{ t("books_management") }}</a>
+        <a href="/dashboard/members" class="sidebar-link">{{ t("members_management") }}</a>
+        <a href="/dashboard/loans" class="sidebar-link">{{ t("loans_management") }}</a>
+    </div>
+
+    <div>
+        <!-- Book Form -->
+        <div class="panel">
+            <h3 id="form-title" class="modal-title">{{ t("add_book") }}</h3>
+            <form method="POST" action="/books/save">
+                <input type="hidden" name="id" id="book-id">
+                
+                <div class="form-group">
+                    <label for="book-title">{{ t("book_title") }}</label>
+                    <input type="text" name="title" id="book-title" class="form-control" required placeholder="The Hobbit">
+                </div>
+                
+                <div class="form-group">
+                    <label for="book-author">{{ t("book_author") }}</label>
+                    <input type="text" name="author" id="book-author" class="form-control" required placeholder="J.R.R. Tolkien">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="book-year">{{ t("book_year") }}</label>
+                        <input type="number" name="published_year" id="book-year" class="form-control" required placeholder="1937">
+                    </div>
+                    <div class="form-group">
+                        <label for="book-isbn">ISBN</label>
+                        <input type="text" name="isbn" id="book-isbn" class="form-control" required placeholder="9780007487289">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="book-cover">{{ t("book_cover") }}</label>
+                    <input type="url" name="cover_image" id="book-cover" class="form-control" placeholder="https://example.com/cover.jpg">
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="submit" id="form-submit" class="btn btn-primary">{{ t("add_book") }}</button>
+                    <button type="button" id="cancel-edit" class="btn btn-secondary" style="display: none;" onclick="cancelBookEdit()">{{ t("clear_button") }}</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Book List -->
+        <div class="panel">
+            <h3>{{ t("books_management") }}</h3>
+            {% if books %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cover</th>
+                                <th>{{ t("book_title") }}</th>
+                                <th>{{ t("book_author") }}</th>
+                                <th>{{ t("book_year") }}</th>
+                                <th>ISBN</th>
+                                <th>{{ t("status") }}</th>
+                                <th>{{ t("actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in books %}
+                                <tr>
+                                    <td>
+                                        <div style="width: 45px; height: 60px; background: #111827; display: flex; justify-content: center; align-items: center; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+                                            {% if book.cover_image %}
+                                                <img src="{{ book.cover_image }}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            {% endif %}
+                                            <span style="display: {% if book.cover_image %}none{% else %}block{% endif %}; font-size: 1.25rem;">📚</span>
+                                        </div>
+                                    </td>
+                                    <td><strong><a href="/books/{{ book.id }}" style="color: var(--primary-color);">{{ book.title }}</a></strong></td>
+                                    <td>{{ book.author }}</td>
+                                    <td>{{ book.published_year }}</td>
+                                    <td>{{ book.isbn }}</td>
+                                    <td>
+                                        <span class="audit-log-badge {% if book.is_available %}action-create{% else %}action-delete{% endif %}">
+                                            {% if book.is_available %}{{ t("available") }}{% else %}{{ t("borrowed") }}{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button class="btn btn-secondary btn-sm" onclick="editBook({{ book.id }}, '{{ book.title|js_escape }}', '{{ book.author|js_escape }}', {{ book.published_year }}, '{{ book.isbn }}', '{{ book.cover_image }}')">
+                                                Edit
+                                            </button>
+                                            <form method="POST" action="/books/delete/{{ book.id }}" onsubmit="return confirm('Delete this book?');">
+                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary);">{{ t("no_books") }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editBook(id, title, author, year, isbn, cover) {
+        document.getElementById('book-id').value = id;
+        document.getElementById('book-title').value = title;
+        document.getElementById('book-author').value = author;
+        document.getElementById('book-year').value = year;
+        document.getElementById('book-isbn').value = isbn;
+        document.getElementById('book-cover').value = cover;
+        
+        document.getElementById('form-title').innerText = '{{ t("edit_book") }}';
+        document.getElementById('form-submit').innerText = '{{ t("edit_book") }}';
+        document.getElementById('cancel-edit').style.display = 'inline-flex';
+        
+        // Scroll smoothly to form
+        document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelBookEdit() {
+        document.getElementById('book-id').value = '';
+        document.getElementById('book-title').value = '';
+        document.getElementById('book-author').value = '';
+        document.getElementById('book-year').value = '';
+        document.getElementById('book-isbn').value = '';
+        document.getElementById('book-cover').value = '';
+        
+        document.getElementById('form-title').innerText = '{{ t("add_book") }}';
+        document.getElementById('form-submit').innerText = '{{ t("add_book") }}';
+        document.getElementById('cancel-edit').style.display = 'none';
+    }
+</script>
+{% endblock %}

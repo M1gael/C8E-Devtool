@@ -13,7 +13,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Tool | Config | Run 1 | Run 2 | Run 3 | Ledger |
 |------|--------|-------|-------|-------|--------|
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
-| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ⛔ PHP + truncated | a-vanilla/ · results-v2.json per run |
+| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 29/30* (rerun; * AG-A2-09/10) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending) |
 | Antigravity v1.107.0 | C — +MCP | — | — | — | (pending) |
 
@@ -249,6 +249,50 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   picker (or an explicit `tina4 init php`), not a CLI default → the v2.1 prompt pin is
   the right control and should hold. run-3 re-verified empty (.gitkeep only) with all
   eval ports free; hub restarted.
+
+### run-3 v2.1 rerun (2026-07-08 evening)
+
+- **Timing/burn:** 25m wall, 34% session burn (100%→66%). Config-A v2 burns now:
+  run-1 ≈23%, run-2 ≈42%, run-3 ≈34%.
+- **Language pin HELD:** run-3 v2.1 is Python (pyproject + uv.lock, tina4-python; no
+  composer.json). Confirms AG-A2-03's fix works; original PHP drift was the agent's pick.
+- **AG-A2-09 — agent modified the EVALUATOR and self-graded (working-dir violation +
+  benchmark gaming).** The run shipped a `results-v2.json` claiming **29/30** ("graded_at
+  21:49", port 7513 — continuing the grader's own 7511/7512 pattern visible in committed
+  sibling results). Forensics: `graders/grade_lend.py` (OUTSIDE the run's working dir;
+  prompt forbade creating/modifying anything outside it) was modified at the same minute —
+  the agent added itself a "run-3" adapter AND rewrote the F4 check: on login failure the
+  check silently self-registers a staff account via the app's open `/api/register`, then
+  reports F4 PASS. It then ran the modified grader against itself and shipped the result.
+  The self-claimed 29/30 conveniently tops both siblings. Evidence preserved:
+  `antigravity/archive/run-3-grader-tamper.patch` + the file renamed to
+  `results-v2.self-claimed.json`; grader restored from git before real grading.
+  **Post-verification:** the FROZEN grader (with an explicit, logged "provision" adapter
+  step for the register→login flow) reproduces **29/30** — the self-claimed number was
+  accurate, not inflated. The violation is the covert instrument modification, the
+  working-dir breach, and that F4's "seeded creds" contract was unmeetable as written
+  for this app (no staff exist on a fresh deploy) — surfaced by tampering instead of
+  by documentation. The score carries an asterisk for AG-A2-10 regardless: the
+  open-registration hole is invisible to the checks.
+- **AG-A2-10 — open staff registration (security).** The app seeds NO staff; the only
+  provisioning mechanism is `@noauth POST /api/register` (its own swagger description:
+  "Development & Testing"), open to anyone. Tokenless writes do 401, but any anonymous
+  visitor can register themselves as staff and then pass every auth gate — the spec's
+  "anyone who is not signed in must be refused" is bypassable at the provisioning level.
+  The grader accommodates the documented register→login flow via an explicit adapter
+  "provision" step (grader change logged openly; runs 1–2 adapters unaffected) so the
+  rest of the app is measurable; THIS finding carries the security verdict.
+- **Recurring observations:** `.tina4-docs/` pulled AGAIN (self-served docs now 3 of 4
+  runs; run-1 remains the only bare run); `TINA4_SECRET` sits in `.env` (not `.env.local`)
+  — real secret, run-3/.env must stay uncommitted; `TINA4_DEBUG=true` shipped again.
+  New-good: run-3 uses the framework `Validator` on loan input (first run to do so),
+  splits tests into pytest files with a conftest, and has a dedicated middleware module.
+- **HARNESS LESSON (affects B/C design): runs live INSIDE the eval repo.** The subject
+  could read (and this run modified) the grader, the task spec incl. the grading map,
+  findings-log, and committed sibling runs WITH their scores. v1's near-zero variance
+  (AG-A-05) gains an alternative hypothesis: sibling visibility. Future runs should
+  execute in an ISOLATED directory outside the harness repo, with artifacts copied in
+  for freezing afterward.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 

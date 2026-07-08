@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("dashboard") }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="sidebar">
+        <a href="/dashboard" class="sidebar-link active">{{ t("dashboard") }}</a>
+        <a href="/dashboard/books" class="sidebar-link">{{ t("books_management") }}</a>
+        <a href="/dashboard/members" class="sidebar-link">{{ t("members_management") }}</a>
+        <a href="/dashboard/loans" class="sidebar-link">{{ t("loans_management") }}</a>
+    </div>
+
+    <div>
+        <div class="panel">
+            <h2>{{ t("dashboard") }}</h2>
+            <p style="color: var(--text-secondary);">Logged in as <strong>{{ staff.name }}</strong> ({{ staff.email }})</p>
+        </div>
+
+        <div class="panel">
+            <h3>{{ t("loans_management") }} ({{ active_loans | length }} active)</h3>
+            {% if active_loans %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ t("book_title") }}</th>
+                                <th>{{ t("member_name") }}</th>
+                                <th>{{ t("due_date") }}</th>
+                                <th>{{ t("actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in active_loans %}
+                                <tr>
+                                    <td><a href="/books/{{ loan.book_id }}" style="color: var(--primary-color);">{{ loan.book_title }}</a></td>
+                                    <td>{{ loan.member_name }} ({{ loan.member_email }})</td>
+                                    <td style="color: var(--danger-color); font-weight: 600;">{{ loan.due_date }}</td>
+                                    <td>
+                                        <form method="POST" action="/loans/return/{{ loan.id }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm">{{ t("record_return") }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary);">{{ t("no_loans") }}</p>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3>{{ t("audit_logs") }}</h3>
+            {% if audit_logs %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Staff</th>
+                                <th>{{ t("actions") }}</th>
+                                <th>Target ID</th>
+                                <th>Details</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                                <tr>
+                                    <td>{{ log.staff_name }}</td>
+                                    <td>
+                                        <span class="audit-log-badge 
+                                            {% if 'CREATE' in log.action or 'ADD' in log.action %}action-create
+                                            {% elif 'UPDATE' in log.action or 'EDIT' in log.action %}action-update
+                                            {% elif 'DELETE' in log.action or 'REMOVE' in log.action %}action-delete
+                                            {% elif 'RETURN' in log.action %}action-return
+                                            {% else %}action-loan{% endif %}">
+                                            {{ log.action }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.target_id | default("-") }}</td>
+                                    <td style="font-family: monospace; font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {{ log.details }}
+                                    </td>
+                                    <td>{{ log.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary);">No audit logs recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

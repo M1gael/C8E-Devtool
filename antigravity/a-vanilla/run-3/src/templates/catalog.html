@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("title") }} — {{ t("tagline") }}{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <h2>{{ t("tagline") }}</h2>
+    <form method="GET" action="/" class="search-container">
+        <input type="text" name="search" class="form-control" placeholder="{{ t("search_placeholder") }}" value="{{ query }}">
+        <button type="submit" class="btn btn-primary">{{ t("search_button") }}</button>
+        {% if query %}
+            <a href="/" class="btn btn-secondary">{{ t("clear_button") }}</a>
+        {% endif %}
+    </form>
+</div>
+
+{% if books %}
+    <div class="book-grid">
+        {% for book in books %}
+            <a href="/books/{{ book.id }}" class="book-card">
+                <div class="book-cover-container">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="book-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    {% endif %}
+                    <div class="book-cover-placeholder" style="display: {% if book.cover_image %}none{% else %}flex{% endif %};">📚</div>
+                    
+                    {% if book.is_available %}
+                        <span class="book-badge badge-available">{{ t("available") }}</span>
+                    {% else %}
+                        <span class="book-badge badge-borrowed">{{ t("borrowed") }}</span>
+                    {% endif %}
+                </div>
+                <div class="book-info">
+                    <h3 class="book-title">{{ book.title }}</h3>
+                    <p class="book-author">{{ book.author }}</p>
+                    <div class="book-meta">
+                        <span>{{ t("book_year") }}: {{ book.published_year }}</span>
+                        <span>ISBN: {{ book.isbn }}</span>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if has_prev %}
+                <a href="?search={{ query }}&page={{ page - 1 }}" class="btn btn-secondary btn-sm">&larr; {{ t("prev") }}</a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+            
+            {% if has_next %}
+                <a href="?search={{ query }}&page={{ page + 1 }}" class="btn btn-secondary btn-sm">{{ t("next") }} &rarr;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="panel" style="text-align: center; padding: 3rem;">
+        <p style="color: var(--text-secondary); font-size: 1.2rem;">{{ t("no_books") }}</p>
+    </div>
+{% endif %}
+{% endblock %}

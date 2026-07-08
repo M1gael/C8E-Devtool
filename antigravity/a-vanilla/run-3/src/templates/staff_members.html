@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("members_management") }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="sidebar">
+        <a href="/dashboard" class="sidebar-link">{{ t("dashboard") }}</a>
+        <a href="/dashboard/books" class="sidebar-link">{{ t("books_management") }}</a>
+        <a href="/dashboard/members" class="sidebar-link active">{{ t("members_management") }}</a>
+        <a href="/dashboard/loans" class="sidebar-link">{{ t("loans_management") }}</a>
+    </div>
+
+    <div>
+        <!-- Member Form -->
+        <div class="panel">
+            <h3 id="form-title" class="modal-title">{{ t("add_member") }}</h3>
+            <form method="POST" action="/members/save">
+                <input type="hidden" name="id" id="member-id">
+                
+                <div class="form-group">
+                    <label for="member-name">{{ t("member_name") }}</label>
+                    <input type="text" name="name" id="member-name" class="form-control" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-group">
+                    <label for="member-email">{{ t("member_email") }}</label>
+                    <input type="email" name="email" id="member-email" class="form-control" required placeholder="john.doe@example.com">
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                    <button type="submit" id="form-submit" class="btn btn-primary">{{ t("add_member") }}</button>
+                    <button type="button" id="cancel-edit" class="btn btn-secondary" style="display: none;" onclick="cancelMemberEdit()">{{ t("clear_button") }}</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Member List -->
+        <div class="panel">
+            <h3>{{ t("members_management") }}</h3>
+            {% if members %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>{{ t("member_name") }}</th>
+                                <th>{{ t("member_email") }}</th>
+                                <th>{{ t("join_date") }}</th>
+                                <th>{{ t("actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                                <tr>
+                                    <td>#{{ member.id }}</td>
+                                    <td><strong>{{ member.name }}</strong></td>
+                                    <td>{{ member.email }}</td>
+                                    <td>{{ member.join_date }}</td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button class="btn btn-secondary btn-sm" onclick="editMember({{ member.id }}, '{{ member.name|js_escape }}', '{{ member.email|js_escape }}')">
+                                                Edit
+                                            </button>
+                                            <form method="POST" action="/members/delete/{{ member.id }}" onsubmit="return confirm('Delete this member?');">
+                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary);">{{ t("no_members") }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editMember(id, name, email) {
+        document.getElementById('member-id').value = id;
+        document.getElementById('member-name').value = name;
+        document.getElementById('member-email').value = email;
+        
+        document.getElementById('form-title').innerText = '{{ t("edit_member") }}';
+        document.getElementById('form-submit').innerText = '{{ t("edit_member") }}';
+        document.getElementById('cancel-edit').style.display = 'inline-flex';
+        
+        // Scroll smoothly to form
+        document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelMemberEdit() {
+        document.getElementById('member-id').value = '';
+        document.getElementById('member-name').value = '';
+        document.getElementById('member-email').value = '';
+        
+        document.getElementById('form-title').innerText = '{{ t("add_member") }}';
+        document.getElementById('form-submit').innerText = '{{ t("add_member") }}';
+        document.getElementById('cancel-edit').style.display = 'none';
+    }
+</script>
+{% endblock %}

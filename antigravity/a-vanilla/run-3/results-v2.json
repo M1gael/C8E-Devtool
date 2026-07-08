@@ -1,0 +1,191 @@
+{
+  "meta": {
+    "graded_at": "2026-07-08 21:55:16",
+    "task": "query-spec-v2.md v2.1",
+    "port": 7513,
+    "tina4_python": "3.13.56"
+  },
+  "score": "29/30",
+  "checks": {
+    "F1": {
+      "ok": true,
+      "title": "boots under tina4 serve",
+      "note": "",
+      "spec": "It must run under `tina4 serve` on port {PORT}."
+    },
+    "F2": {
+      "ok": true,
+      "title": "website serves a home page",
+      "note": "status 200",
+      "spec": "Lend must work both as a website and as a JSON API."
+    },
+    "F3": {
+      "ok": true,
+      "title": "public JSON catalogue, no auth",
+      "note": "status 200",
+      "spec": "The public can browse and search the catalogue."
+    },
+    "F5": {
+      "ok": true,
+      "title": "unauthenticated write refused",
+      "note": "status 401 (2xx here = unauthenticated write accepted)",
+      "spec": "Anyone who is not signed in must be refused from those actions \u2014 not merely hidden in the interface, but actually refused by the API."
+    },
+    "F4": {
+      "ok": true,
+      "title": "staff login with seeded creds",
+      "note": "status 200 (attempt 1)",
+      "spec": "Staff must sign in before they can add, edit, or remove books or members."
+    },
+    "F6": {
+      "ok": true,
+      "title": "authenticated create persists + is retrievable",
+      "note": "created id 1, detail 200",
+      "spec": "Staff must sign in before they can add, edit, or remove books."
+    },
+    "F7": {
+      "ok": true,
+      "title": "invalid input rejected clearly (not 5xx, not 2xx)",
+      "note": "status 400 (needs non-auth 4xx + JSON error body)",
+      "spec": "Incomplete or invalid input is rejected with clear, correct error responses."
+    },
+    "F8": {
+      "ok": true,
+      "title": "search by title, author, year",
+      "note": "title:True author:True year:True",
+      "spec": "Browse and search the catalogue by title, author, or year."
+    },
+    "F9": {
+      "ok": true,
+      "title": "pagination pages through a big catalogue",
+      "note": "page1 10 items, page2 10, overlap 0",
+      "spec": "Page smoothly through tens of thousands of titles."
+    },
+    "F10": {
+      "ok": true,
+      "title": "borrow returns immediately + availability flips",
+      "note": "loan in 0.00s, availability flipped: True",
+      "spec": "Recording the loan must return immediately \u2014 nobody should wait for the email. / Lend must always know a book's current availability."
+    },
+    "F13": {
+      "ok": true,
+      "title": "email receipt queued in background",
+      "note": "evidence: data\\queue\\loans_email\\1783540519167-000001_b9f03b67-ad1d-4f92-8e43-32a4e43a27e2.queue-data",
+      "spec": "When a member borrows a book, they are emailed a receipt showing the due date."
+    },
+    "F11": {
+      "ok": true,
+      "title": "double-borrow clearly rejected",
+      "note": "status 400",
+      "spec": "A book that is already out on loan cannot be borrowed again until it is returned; the API must reject that attempt clearly."
+    },
+    "F12": {
+      "ok": true,
+      "title": "return frees the book + history retained",
+      "note": "available again: True, history visible: True",
+      "spec": "A book can be borrowed by different members over time. Lend must always know ... its full borrowing history."
+    },
+    "F14": {
+      "ok": true,
+      "title": "audit log records changes with staff attribution",
+      "note": "attributed to ['Grader Staff', 'grader@example.com']: True",
+      "spec": "Every change is attributed to the staff member who made it and recorded so it can be reviewed later."
+    },
+    "F15": {
+      "ok": false,
+      "title": "cover image can actually be uploaded",
+      "note": "multipart accepted but no stored cover path returned",
+      "spec": "Each book has a cover image users can upload."
+    },
+    "F16": {
+      "ok": true,
+      "title": "second language actually served",
+      "note": "8 locale strings served (e.g. 'Biblioteca de Pr\u00e9stamo Comunitario')",
+      "spec": "Available in English and one other language."
+    },
+    "F17": {
+      "ok": true,
+      "title": "data survives an application restart",
+      "note": "after restart: 200",
+      "spec": "All data must persist and survive an application restart."
+    },
+    "F18": {
+      "ok": true,
+      "title": "interactive API docs served",
+      "note": "/swagger 200, spec /swagger/openapi.json 200, own routes in spec: 3",
+      "spec": "Provide interactive documentation for the API."
+    },
+    "P1": {
+      "ok": true,
+      "title": "boots in production configuration",
+      "note": "",
+      "spec": "It must also run correctly in production configuration \u2014 with debugging turned off, a real secret configured, and all data intact."
+    },
+    "P2": {
+      "ok": true,
+      "title": "data intact across the mode switch",
+      "note": "status 200",
+      "spec": "...and all data intact."
+    },
+    "P3": {
+      "ok": true,
+      "title": "unauthenticated write refused in production",
+      "note": "status 401 (2xx = unauthenticated write accepted in prod)",
+      "spec": "Anyone who is not signed in must be refused ... actually refused by the API. (graded again with debugging off)"
+    },
+    "P4": {
+      "ok": true,
+      "title": "staff flow still works in production",
+      "note": "authed write status 201",
+      "spec": "Staff must sign in before they can add, edit, or remove books. (graded again with debugging off)"
+    },
+    "T1": {
+      "ok": true,
+      "title": "their own test suite passes",
+      "note": "tina4 test -> configfile: pyproject.toml collected 4 items tests\\test_auth.py . [ 25%] tests\\test_catalog.py .. [ 75%] tests\\test_loans.py . [100%] ============================== 4 passed in 0.76s ==============================",
+      "spec": "Include an automated test suite that proves the behaviour described above."
+    },
+    "S1": {
+      "ok": true,
+      "title": "schema via migrations (book ch06)",
+      "note": "2 migration file(s), 5 CREATE TABLE",
+      "spec": ""
+    },
+    "S2": {
+      "ok": true,
+      "title": "entities as ORM models (book ch06)",
+      "note": "5 ORM models",
+      "spec": ""
+    },
+    "S3": {
+      "ok": true,
+      "title": "background work via framework queue/runner (book ch12/27)",
+      "note": "api.py, app.py, loan_email_worker.py, test_loans.py",
+      "spec": ""
+    },
+    "S4": {
+      "ok": true,
+      "title": "UI via template files, not inline HTML (book ch04)",
+      "note": "8 templates, inline html in: none",
+      "spec": ""
+    },
+    "S5": {
+      "ok": true,
+      "title": "passwords hashed via framework auth (book ch08)",
+      "note": "hash api: True, plaintext seed: False",
+      "spec": ""
+    },
+    "S6": {
+      "ok": true,
+      "title": "TINA4_SECRET files covered by own .gitignore",
+      "note": "secret-bearing: ['.env'], unignored: none",
+      "spec": ""
+    },
+    "S7": {
+      "ok": true,
+      "title": "two real locale files (book ch14)",
+      "note": "{'en.json': 47, 'es.json': 47} keys per file",
+      "spec": ""
+    }
+  }
+}

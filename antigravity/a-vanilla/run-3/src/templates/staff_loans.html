@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("loans_management") }} — {{ t("title") }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="sidebar">
+        <a href="/dashboard" class="sidebar-link">{{ t("dashboard") }}</a>
+        <a href="/dashboard/books" class="sidebar-link">{{ t("books_management") }}</a>
+        <a href="/dashboard/members" class="sidebar-link">{{ t("members_management") }}</a>
+        <a href="/dashboard/loans" class="sidebar-link active">{{ t("loans_management") }}</a>
+    </div>
+
+    <div>
+        <!-- Record Loan Form -->
+        <div class="panel">
+            <h3 class="modal-title">{{ t("record_loan") }}</h3>
+            <form method="POST" action="/loans/create">
+                <div class="form-group">
+                    <label for="loan-book-id">{{ t("book_title") }}</label>
+                    <select name="book_id" id="loan-book-id" class="form-control" required>
+                        <option value="">-- Select Available Book --</option>
+                        {% for book in available_books %}
+                            <option value="{{ book.id }}">{{ book.title }} (by {{ book.author }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loan-member-id">{{ t("member_name") }}</label>
+                    <select name="member_id" id="loan-member-id" class="form-control" required>
+                        <option value="">-- Select Member --</option>
+                        {% for member in members %}
+                            <option value="{{ member.id }}">{{ member.name }} ({{ member.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="loan-due-date">{{ t("due_date") }}</label>
+                    <input type="date" name="due_date" id="loan-due-date" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">
+                    {{ t("record_loan") }}
+                </button>
+            </form>
+        </div>
+
+        <!-- Active Loans List -->
+        <div class="panel">
+            <h3>Active Loans</h3>
+            {% if active_loans %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ t("book_title") }}</th>
+                                <th>{{ t("member_name") }}</th>
+                                <th>{{ t("borrow_date") }}</th>
+                                <th>{{ t("due_date") }}</th>
+                                <th>{{ t("actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in active_loans %}
+                                <tr>
+                                    <td><strong><a href="/books/{{ loan.book_id }}" style="color: var(--primary-color);">{{ loan.book_title }}</a></strong></td>
+                                    <td>{{ loan.member_name }} ({{ loan.member_email }})</td>
+                                    <td>{{ loan.borrow_date }}</td>
+                                    <td style="color: var(--danger-color); font-weight: 600;">{{ loan.due_date }}</td>
+                                    <td>
+                                        <form method="POST" action="/loans/return/{{ loan.id }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm">{{ t("record_return") }}</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary);">{{ t("no_loans") }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set default due date to 14 days from today
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateInput = document.getElementById("loan-due-date");
+        if (dateInput) {
+            const today = new Date();
+            const fourteenDays = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+            const yyyy = fourteenDays.getFullYear();
+            let mm = fourteenDays.getMonth() + 1;
+            let dd = fourteenDays.getDate();
+            
+            if (mm < 10) mm = '0' + mm;
+            if (dd < 10) dd = '0' + dd;
+            
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+    });
+</script>
+{% endblock %}
