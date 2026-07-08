@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("app_title") }} - {{ t("app_subtitle") }}{% endblock %}
+
+{% block content %}
+<style>
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.05em;
+        background: linear-gradient(135deg, #f8fafc, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-section p {
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        font-weight: 400;
+    }
+
+    .search-container {
+        max-width: 600px;
+        margin: 0 auto 4rem auto;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 0.75rem;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid var(--border);
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(8px);
+    }
+
+    .search-form input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+
+    .search-form input:focus {
+        outline: none;
+    }
+
+    .search-form button {
+        padding: 0.75rem 1.75rem;
+    }
+
+    .books-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .book-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        overflow: hidden;
+    }
+
+    .book-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .book-cover-wrapper {
+        aspect-ratio: 2/3;
+        width: 100%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .book-cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .book-card:hover .book-cover-img {
+        transform: scale(1.05);
+    }
+
+    .book-cover-placeholder {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .book-cover-placeholder-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+
+    .book-cover-placeholder-author {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+
+    .book-info {
+        padding: 1.25rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex-grow: 1;
+    }
+
+    .book-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--text-main);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .book-author {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .book-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+        font-size: 0.85rem;
+    }
+
+    .book-year {
+        color: var(--text-muted);
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .page-info {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .pagination-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+</style>
+
+<div class="hero-section">
+    <h1>{{ t("app_subtitle") }}</h1>
+    <p>Browse, search, and borrow books from our local community library catalog.</p>
+</div>
+
+<div class="search-container">
+    <form class="search-form" method="GET" action="/">
+        <input type="text" name="q" value="{{ q }}" placeholder="{{ t('search_placeholder') }}" autocomplete="off">
+        {% if lang %}
+            <input type="hidden" name="lang" value="{{ lang }}">
+        {% endif %}
+        <button type="submit" class="btn btn-primary">{{ t("btn_search") }}</button>
+    </form>
+</div>
+
+{% if books | length == 0 %}
+<div class="glass-card" style="text-align: center; padding: 4rem 2rem;">
+    <span style="font-size: 3rem;">🔍</span>
+    <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">No books found</h3>
+    <p style="color: var(--text-muted);">Try modifying your search keywords or clear the filter to view all books.</p>
+    <a href="/" class="btn btn-secondary" style="margin-top: 1.5rem;">Clear Filters</a>
+</div>
+{% else %}
+<div class="books-grid">
+    {% for book in books %}
+    <a href="/books/{{ book.id }}" class="glass-card book-card">
+        <div class="book-cover-wrapper">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image }}" class="book-cover-img" alt="{{ book.title }} Cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="book-cover-placeholder" style="display: none;">
+                    <div class="book-cover-placeholder-title">{{ book.title }}</div>
+                    <div class="book-cover-placeholder-author">{{ book.author }}</div>
+                </div>
+            {% else %}
+                <div class="book-cover-placeholder">
+                    <div class="book-cover-placeholder-title">{{ book.title }}</div>
+                    <div class="book-cover-placeholder-author">{{ book.author }}</div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="book-info">
+            <h3 class="book-title" title="{{ book.title }}">{{ book.title }}</h3>
+            <div class="book-author">{{ book.author }}</div>
+            <div class="book-meta">
+                <span class="book-year">{{ book.published_year }}</span>
+                {% if book.available %}
+                    <span class="badge badge-success">{{ t("available") }}</span>
+                {% else %}
+                    <span class="badge badge-danger">{{ t("borrowed") }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+        <a href="?q={{ q }}&page={{ page - 1 }}{% if lang %}&lang={{ lang }}{% endif %}" class="btn btn-secondary pagination-btn">&larr; Prev</a>
+    {% else %}
+        <button class="btn btn-secondary pagination-btn" disabled style="opacity: 0.5; cursor: not-allowed;">&larr; Prev</button>
+    {% endif %}
+    
+    <span class="page-info">Page {{ page }} of {{ pages }}</span>
+    
+    {% if page < pages %}
+        <a href="?q={{ q }}&page={{ page + 1 }}{% if lang %}&lang={{ lang }}{% endif %}" class="btn btn-secondary pagination-btn">Next &rarr;</a>
+    {% else %}
+        <button class="btn btn-secondary pagination-btn" disabled style="opacity: 0.5; cursor: not-allowed;">Next &rarr;</button>
+    {% endif %}
+</div>
+{% endif %}
+{% endif %}
+
+<script>
+    document.getElementById('nav-home').classList.add('active');
+</script>
+{% endblock %}

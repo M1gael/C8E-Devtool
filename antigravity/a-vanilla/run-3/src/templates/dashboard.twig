@@ -1,0 +1,523 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div class="hero" style="text-align: left; margin-bottom: 2rem;">
+    <h1>{{ t.t('dashboard.title') }}</h1>
+    <p>{{ t.t('dashboard.welcome', {'name': user.name}) }} ({{ user.email }})</p>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('books-tab')">{{ t.t('dashboard.books_tab') }}</button>
+    <button class="tab-btn" onclick="switchTab('members-tab')">{{ t.t('dashboard.members_tab') }}</button>
+    <button class="tab-btn" onclick="switchTab('loans-tab')">{{ t.t('dashboard.loans_tab') }}</button>
+    <button class="tab-btn" onclick="switchTab('audit-tab')">{{ t.t('dashboard.audit_tab') }}</button>
+</div>
+
+<!-- Global Dashboard Alert -->
+<div id="dashboard-alert" style="display: none;" class="alert"></div>
+
+<!-- Tab Content: Books -->
+<div id="books-tab" class="tab-content active">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.5rem; font-weight: 700;">{{ t.t('dashboard.books_tab') }}</h3>
+        <button class="btn-primary" onclick="openModal('book-modal')">{{ t.t('dashboard.add_book') }}</button>
+    </div>
+    
+    <div class="table-container glass shadow-premium">
+        <table>
+            <thead>
+                <tr>
+                    <th>{{ t.t('catalog.title_label') }}</th>
+                    <th>{{ t.t('catalog.author_label') }}</th>
+                    <th>{{ t.t('catalog.year_label') }}</th>
+                    <th>{{ t.t('catalog.isbn_label') }}</th>
+                    <th>{{ t.t('catalog.status_label') }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in all_books %}
+                    <tr id="book-row-{{ book.id }}">
+                        <td style="font-weight: 600;">{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>{{ book.published_year }}</td>
+                        <td><code>{{ book.isbn }}</code></td>
+                        <td>
+                            {% if book.available %}
+                                <span class="badge badge-available" style="position: static;">{{ t.t('catalog.available') }}</span>
+                            {% else %}
+                                <span class="badge badge-borrowed" style="position: static;">{{ t.t('catalog.borrowed') }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171;" onclick="deleteBook({{ book.id }})">{{ t.t('dashboard.delete_book') }}</button>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-secondary);">No books in library catalog.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tab Content: Members -->
+<div id="members-tab" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.5rem; font-weight: 700;">{{ t.t('dashboard.members_tab') }}</h3>
+        <button class="btn-primary" onclick="openModal('member-modal')">{{ t.t('dashboard.add_member') }}</button>
+    </div>
+    
+    <div class="table-container glass shadow-premium">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Join Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                    <tr id="member-row-{{ member.id }}">
+                        <td style="font-weight: 600;">{{ member.name }}</td>
+                        <td>{{ member.email }}</td>
+                        <td>{{ member.join_date }}</td>
+                        <td>
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171;" onclick="deleteMember({{ member.id }})">{{ t.t('dashboard.delete_member') }}</button>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-secondary);">{{ t.t('dashboard.no_members') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tab Content: Loans / Returns -->
+<div id="loans-tab" class="tab-content">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        
+        <!-- Record Loan Card -->
+        <div class="glass shadow-premium" style="padding: 2rem; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">{{ t.t('dashboard.record_loan_title') }}</h3>
+            <form id="loan-form">
+                <div class="form-group">
+                    <label class="form-label" for="loan-book-id">{{ t.t('dashboard.book_label') }}</label>
+                    <select id="loan-book-id" required class="form-control" style="background: var(--bg-main);">
+                        <option value="">-- Select Book --</option>
+                        {% for book in all_books %}
+                            {% if book.available %}
+                                <option value="{{ book.id }}">{{ book.title }} (by {{ book.author }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="loan-member-id">{{ t.t('dashboard.member_label') }}</label>
+                    <select id="loan-member-id" required class="form-control" style="background: var(--bg-main);">
+                        <option value="">-- Select Member --</option>
+                        {% for member in members %}
+                            <option value="{{ member.id }}">{{ member.name }} ({{ member.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="loan-borrow-date">{{ t.t('dashboard.borrow_date_label') }}</label>
+                    <input type="date" id="loan-borrow-date" required class="form-control">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="loan-due-date">{{ t.t('dashboard.due_date_label') }}</label>
+                    <input type="date" id="loan-due-date" required class="form-control">
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">{{ t.t('dashboard.record_loan_button') }}</button>
+            </form>
+        </div>
+        
+        <!-- Record Return Card -->
+        <div class="glass shadow-premium" style="padding: 2rem; border-radius: var(--radius-md);">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">{{ t.t('dashboard.return_book_title') }}</h3>
+            <form id="return-form">
+                <div class="form-group">
+                    <label class="form-label" for="return-book-id">{{ t.t('dashboard.book_label') }}</label>
+                    <select id="return-book-id" required class="form-control" style="background: var(--bg-main);">
+                        <option value="">-- Select Borrowed Book --</option>
+                        {% for book in all_books %}
+                            {% if not book.available %}
+                                <option value="{{ book.id }}">{{ book.title }} (by {{ book.author }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="return-date">Return Date</label>
+                    <input type="date" id="return-date" required class="form-control">
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">{{ t.t('dashboard.return_button') }}</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content: Audit Logs -->
+<div id="audit-tab" class="tab-content">
+    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">Activity Audit Logs</h3>
+    <div class="table-container glass shadow-premium">
+        <table>
+            <thead>
+                <tr>
+                    <th>Staff User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Entity ID</th>
+                    <th>Details</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in audit_logs %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ log.staff_name }}</td>
+                        <td><code style="color: var(--primary); font-weight: 600;">{{ log.action }}</code></td>
+                        <td>{{ log.entity_type }}</td>
+                        <td><code>#{{ log.entity_id }}</code></td>
+                        <td><span style="font-size: 0.8rem; color: var(--text-secondary); max-width: 250px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ log.details }}">{{ log.details }}</span></td>
+                        <td>{{ log.created_at }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-secondary);">{{ t.t('dashboard.no_logs') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add Book -->
+<div id="book-modal" class="modal">
+    <div class="modal-content glass shadow-premium">
+        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">{{ t.t('dashboard.add_book') }}</h3>
+        <div id="book-error" class="alert alert-danger" style="display: none;"></div>
+        <form id="book-form">
+            <div class="form-group">
+                <label class="form-label" for="book-title">{{ t.t('catalog.title_label') }}</label>
+                <input type="text" id="book-title" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="book-author">{{ t.t('catalog.author_label') }}</label>
+                <input type="text" id="book-author" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="book-year">{{ t.t('catalog.year_label') }}</label>
+                <input type="number" id="book-year" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="book-isbn">{{ t.t('catalog.isbn_label') }}</label>
+                <input type="text" id="book-isbn" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="book-cover">Cover Image URL (optional)</label>
+                <input type="text" id="book-cover" placeholder="/images/default_cover.jpg" class="form-control">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeModal('book-modal')">Cancel</button>
+                <button type="submit" class="btn-primary">Save Book</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add Member -->
+<div id="member-modal" class="modal">
+    <div class="modal-content glass shadow-premium">
+        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">{{ t.t('dashboard.add_member') }}</h3>
+        <div id="member-error" class="alert alert-danger" style="display: none;"></div>
+        <form id="member-form">
+            <div class="form-group">
+                <label class="form-label" for="member-name">Full Name</label>
+                <input type="text" id="member-name" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="member-email">Email Address</label>
+                <input type="email" id="member-email" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="member-join-date">Join Date</label>
+                <input type="date" id="member-join-date" required class="form-control">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeModal('member-modal')">Cancel</button>
+                <button type="submit" class="btn-primary">Save Member</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load active tab from localStorage if available
+document.addEventListener("DOMContentLoaded", () => {
+    const activeTab = localStorage.getItem("dashboard_tab") || "books-tab";
+    switchTab(activeTab);
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const borrowDateInput = document.getElementById('loan-borrow-date');
+    const dueDateInput = document.getElementById('loan-due-date');
+    const returnDateInput = document.getElementById('return-date');
+    const memberJoinDateInput = document.getElementById('member-join-date');
+    
+    if (borrowDateInput) borrowDateInput.value = today;
+    if (returnDateInput) returnDateInput.value = today;
+    if (memberJoinDateInput) memberJoinDateInput.value = today;
+    
+    // Default due date: 14 days from today
+    if (dueDateInput) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 14);
+        dueDateInput.value = dueDate.toISOString().split('T')[0];
+    }
+});
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Find matching button
+    const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => {
+        return b.getAttribute('onclick').includes(tabId);
+    });
+    if (btn) btn.classList.add('active');
+    
+    const tabEl = document.getElementById(tabId);
+    if (tabEl) tabEl.classList.add('active');
+    
+    localStorage.setItem("dashboard_tab", tabId);
+}
+
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showAlert(message, type = 'success') {
+    const alertEl = document.getElementById('dashboard-alert');
+    alertEl.className = `alert alert-${type} shadow-premium`;
+    alertEl.textContent = message;
+    alertEl.style.display = 'flex';
+    
+    // Scroll to top of page to show alert
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    setTimeout(() => {
+        alertEl.style.display = 'none';
+    }, 5000);
+}
+
+// Add Book Form Handler
+document.getElementById('book-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const title = document.getElementById('book-title').value;
+    const author = document.getElementById('book-author').value;
+    const published_year = document.getElementById('book-year').value;
+    const isbn = document.getElementById('book-isbn').value;
+    const cover_image = document.getElementById('book-cover').value;
+    const errorEl = document.getElementById('book-error');
+    
+    errorEl.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/books', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ title, author, published_year, isbn, cover_image })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('book-modal');
+            showAlert("Book saved successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            errorEl.textContent = (data.errors ? data.errors.join(', ') : data.error) || "Failed to save book";
+            errorEl.style.display = 'flex';
+        }
+    } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Connection error. Failed to save book.";
+        errorEl.style.display = 'flex';
+    }
+});
+
+// Delete Book Handler
+async function deleteBook(id) {
+    if (!confirm("Are you sure you want to delete this book?")) return;
+    
+    try {
+        const response = await fetch(`/api/books/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            document.getElementById(`book-row-${id}`).remove();
+            showAlert("Book deleted successfully!");
+        } else {
+            const data = await response.json();
+            showAlert(data.error || "Failed to delete book", "danger");
+        }
+    } catch (err) {
+        console.error(err);
+        showAlert("Connection error. Failed to delete book.", "danger");
+    }
+}
+
+// Add Member Form Handler
+document.getElementById('member-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('member-name').value;
+    const email = document.getElementById('member-email').value;
+    const join_date = document.getElementById('member-join-date').value;
+    const errorEl = document.getElementById('member-error');
+    
+    errorEl.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/members', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ name, email, join_date })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('member-modal');
+            showAlert("Member registered successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            errorEl.textContent = (data.errors ? data.errors.join(', ') : data.error) || "Failed to register member";
+            errorEl.style.display = 'flex';
+        }
+    } catch (err) {
+        console.error(err);
+        errorEl.textContent = "Connection error. Failed to register member.";
+        errorEl.style.display = 'flex';
+    }
+});
+
+// Delete Member Handler
+async function deleteMember(id) {
+    if (!confirm("Are you sure you want to delete this member?")) return;
+    
+    try {
+        const response = await fetch(`/api/members/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            document.getElementById(`member-row-${id}`).remove();
+            showAlert("Member deleted successfully!");
+        } else {
+            const data = await response.json();
+            showAlert(data.error || "Failed to delete member", "danger");
+        }
+    } catch (err) {
+        console.error(err);
+        showAlert("Connection error. Failed to delete member.", "danger");
+    }
+}
+
+// Record Loan Handler
+document.getElementById('loan-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const book_id = document.getElementById('loan-book-id').value;
+    const member_id = document.getElementById('loan-member-id').value;
+    const borrow_date = document.getElementById('loan-borrow-date').value;
+    const due_date = document.getElementById('loan-due-date').value;
+    
+    try {
+        const response = await fetch('/api/loans', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ book_id, member_id, borrow_date, due_date })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showAlert("Loan recorded successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(data.error || (data.errors ? data.errors.join(', ') : "Failed to record loan"), "danger");
+        }
+    } catch (err) {
+        console.error(err);
+        showAlert("Connection error. Failed to record loan.", "danger");
+    }
+});
+
+// Record Return Handler
+document.getElementById('return-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const book_id = document.getElementById('return-book-id').value;
+    const returned_date = document.getElementById('return-date').value;
+    
+    try {
+        const response = await fetch('/api/loans/return', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ book_id, returned_date })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showAlert("Book returned successfully!");
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert(data.error || "Failed to record book return", "danger");
+        }
+    } catch (err) {
+        console.error(err);
+        showAlert("Connection error. Failed to record book return.", "danger");
+    }
+});
+</script>
+{% endblock %}

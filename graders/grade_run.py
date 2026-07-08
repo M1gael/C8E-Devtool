@@ -14,12 +14,15 @@ The app is booted with `tina4 serve` (the real served path), not in-process.
 
 import argparse
 import json
+import os
 import re
 import shlex
+import shutil
 import socket
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -35,10 +38,11 @@ HTTP_TIMEOUT = 10
 class Serve:
     """Manages the `tina4 serve` subprocess for the app under test."""
 
-    def __init__(self, run_dir: Path, cmd: str, port: int):
+    def __init__(self, run_dir: Path, cmd: str, port: int, env=None):
         self.run_dir = run_dir
         self.cmd = cmd
         self.port = port
+        self.env = env  # None -> inherit parent env (default F/I behaviour)
         self.proc = None
         self.boot_log = run_dir / "grader-serve.log"
 
@@ -50,6 +54,7 @@ class Serve:
             stdout=log,
             stderr=subprocess.STDOUT,
             shell=False,
+            env=self.env,
         )
         return wait_port(self.port, BOOT_TIMEOUT)
 
@@ -326,10 +331,17 @@ def idiom_checks(run_dir: Path, f1_pass: bool) -> dict:
     tpl_files = [p for p in tpl_dir.rglob("*") if p.is_file()] \
         if tpl_dir.is_dir() else []
     inline_html = bool(re.search(r"<(html|body|table|div)\b", route_src, re.I))
+    # Template-render idiom, either documented form (calibrated 2026-07-07 after
+    # AG-A run 1 used the decorator form): response.render(...) OR the @template(...)
+    # decorator (tina4_python.core.router.template — auto-renders a dict return via
+    # response.render under the hood; router.py docstring + shipped CLAUDE.md). The
+    # frozen checklist I3 asks only for "rendered via a template file (no inline HTML
+    # in routes)" — both forms satisfy that; matching only "render" was too narrow.
+    renders = bool(re.search(r"\.render\s*\(|@\s*template\s*\(", route_src))
     i["I3"] = check(
-        bool(tpl_files) and "render" in route_src and not inline_html,
-        f"templates: {[p.name for p in tpl_files]}, render() used: "
-        f"{'render' in route_src}, inline HTML in routes: {inline_html}")
+        bool(tpl_files) and renders and not inline_html,
+        f"templates: {[p.name for p in tpl_files]}, template render "
+        f"(render()/@template): {renders}, inline HTML in routes: {inline_html}")
 
     i["I4"] = check(
         bool(re.search(r"async\s+def\s+\w+\s*\(\s*request\s*,\s*response",
@@ -349,6 +361,182 @@ def idiom_checks(run_dir: Path, f1_pass: bool) -> dict:
     return i
 
 
+# ---------------------------------------------------------------- hardening (H-tier)
+# ADDITIVE prod-readiness / quality tier. Grades the SAME frozen output harder;
+# it never changes the frozen F1-F9 / I1-I6 scores. Checks are grounded in
+# book-1-python (pulled via `tina4 books`), cited per check. Scored: H1,H2,H4,H5.
+
+PROD_SKIP = {".venv", "venv", "logs", "__pycache__", ".git", "site-packages",
+             "node_modules", ".tina4"}
+
+
+def _copy_for_prod(run_dir: Path, dest: Path, port: int):
+    """Copy the run to a throwaway dir and force PRODUCTION in the COPY's .env
+    only — the frozen run is never mutated. Book ch34 "Deployment" (L15,L21):
+    the first deployment step is `.env` for production, `TINA4_DEBUG=false`;
+    ch33 (L27): debug default false, "Never set to `true` in production"."""
+    def ignore(_d, names):
+        return [n for n in names
+                if n in PROD_SKIP or n.endswith((".pyc", ".log"))]
+    shutil.copytree(run_dir, dest, ignore=ignore)
+    envf = dest / ".env"
+    lines, saw_debug, saw_port = [], False, False
+    if envf.exists():
+        for ln in envf.read_text(errors="replace").splitlines():
+            u = ln.strip().upper()
+            if u.startswith("TINA4_DEBUG"):
+                lines.append("TINA4_DEBUG=false"); saw_debug = True
+            elif u.startswith("TINA4_PORT"):
+                lines.append(f"TINA4_PORT={port}"); saw_port = True
+            else:
+                lines.append(ln)
+    if not saw_debug:
+        lines.append("TINA4_DEBUG=false")
+    if not saw_port:
+        lines.append(f"TINA4_PORT={port}")
+    envf.write_text("\n".join(lines) + "\n")
+
+
+def _own_gitignore_matches(run_dir: Path, rel: str) -> bool:
+    """True if `rel` (posix, relative to run_dir) is matched by the run's OWN
+    .gitignore, evaluated as if the run dir were its own repo — NOT the parent
+    eval repo. Pragmatic matcher (exact name, *.ext globs, dir/ prefixes)."""
+    import fnmatch
+    gi = run_dir / ".gitignore"
+    if not gi.exists():
+        return False
+    name = rel.rsplit("/", 1)[-1]
+    for raw in gi.read_text(errors="replace").splitlines():
+        pat = raw.strip()
+        if not pat or pat.startswith("#"):
+            continue
+        pat = pat.lstrip("/")
+        if pat.endswith("/"):
+            if rel == pat[:-1] or rel.startswith(pat):
+                return True
+        elif fnmatch.fnmatch(name, pat) or fnmatch.fnmatch(rel, pat):
+            return True
+    return False
+
+
+def h_secret_hygiene(run_dir: Path) -> dict:
+    """H4 (static). Book ch33 (L447): a production deploy must "Set a real
+    secret". Any file carrying TINA4_SECRET must be ignored by the run's OWN
+    .gitignore, else the secret ships to git when the run is a standalone repo
+    (which the task frames: "build it in the current directory")."""
+    leaks = []
+    for p in run_dir.rglob("*"):
+        if not p.is_file() or PROD_SKIP.intersection(p.parts):
+            continue
+        try:
+            if re.search(r"TINA4_SECRET\s*=\s*\S", p.read_text(errors="replace")):
+                rel = p.relative_to(run_dir).as_posix()
+                if not _own_gitignore_matches(run_dir, rel):
+                    leaks.append(rel)
+        except OSError:
+            continue
+    return check(
+        not leaks,
+        f"secret-bearing files NOT protected by the run's own .gitignore: "
+        f"{leaks or 'none'}")
+
+
+def h_cleanliness(run_dir: Path) -> dict:
+    """H5 (static). Build hygiene: no nested duplicate scaffold left behind
+    (a subdir carrying its own app.py + pyproject.toml, e.g. run-3's temp_init/)."""
+    cruft = []
+    for p in run_dir.rglob("app.py"):
+        if p.parent == run_dir or PROD_SKIP.intersection(p.parts):
+            continue
+        if (p.parent / "pyproject.toml").exists():
+            cruft.append(p.parent.relative_to(run_dir).as_posix())
+    return check(not cruft, f"nested scaffold/cruft dirs: {cruft or 'none'}")
+
+
+def h_error_accessor(run_dir: Path) -> dict:
+    """Observation (not scored). Which ORM error accessor the save-failure branch
+    uses. At most one of `.last_error` / `.get_error()` is the real API; the other
+    raises AttributeError. F1-F9 never exercise a genuine save failure, so it is
+    latent (AG-A-08). EOD: confirm against tina4_python/orm/model.py."""
+    rd = run_dir / "src" / "routes"
+    src = "\n".join(p.read_text(errors="replace") for p in rd.glob("*.py")) \
+        if rd.is_dir() else ""
+    used = []
+    if re.search(r"\.last_error\b", src):
+        used.append("last_error")
+    if re.search(r"\.get_error\s*\(", src):
+        used.append("get_error()")
+    return {"accessor": used or ["none"],
+            "note": "untested save-failure branch; >=1 accessor may raise "
+                    "AttributeError in prod (AG-A-08)"}
+
+
+def hardening_checks(run_dir: Path, base_port: int, serve_cmd: str) -> dict:
+    """Returns {checks: {H1,H2,H4,H5}, score, observations}. One production boot
+    (DEBUG=false) of a throwaway copy drives H1/H2; H4/H5 are static."""
+    h = {}
+    h["H4"] = h_secret_hygiene(run_dir)
+    h["H5"] = h_cleanliness(run_dir)
+    obs = {"error_accessor": h_error_accessor(run_dir)}
+
+    hport = base_port + 900          # 7011 -> 7911, collision-free with the F-run
+    tmp = Path(tempfile.mkdtemp(prefix="grader-prod-"))
+    dest = tmp / (run_dir.name + "-prod")
+    try:
+        _copy_for_prod(run_dir, dest, hport)
+        penv = dict(os.environ, TINA4_DEBUG="false", TINA4_PORT=str(hport))
+        # `tina4 serve` alone is the DEV server (serves writes regardless of
+        # DEBUG); production auth enforcement needs `--production` (CLI help +
+        # `tina4 routes` banner). Book ch34 boots prod explicitly.
+        prod_cmd = serve_cmd + " --production"
+        pserve = Serve(dest, prod_cmd, hport, env=penv)
+        booted = pserve.start()
+        try:
+            if not booted:
+                h["H1"] = check(False, f"prod boot (DEBUG=false) not reachable on "
+                                       f"{hport} — see {dest/'grader-serve.log'}")
+                h["H2"] = check(False, "skipped: prod boot failed")
+            else:
+                api = f"http://127.0.0.1:{hport}/api/books"
+                gst, _ = req("GET", api)                       # reads are public
+                st, txt = req("POST", api, {"title": "H1 prod probe",
+                                            "author": "H", "published_year": 2020})
+                public = 200 <= st < 300
+                blocked = st in AUTH_BLOCKED
+                # H1 — book ch08: a public write route is @post ABOVE @noauth();
+                # under prod (ch34 DEBUG=false) a mis-ordered route stays auth=required.
+                h["H1"] = check(
+                    public,
+                    f"prod (DEBUG=false) POST no-token -> {st} [GET control -> {gst}]: "
+                    + ("PUBLIC, write works in prod (correct order)" if public
+                       else "AUTH-REQUIRED, would 401 in prod (AG-A-01)" if blocked
+                       else f"unexpected: {txt[:120]}"),
+                    st)
+                obs["prod_write_status"] = st
+                # H2 — book ch03 §4 (L477/L503): missing resource -> 404.
+                nst, _ = req("GET", f"{api}/999999999")
+                h["H2"] = check(
+                    nst == 404,
+                    f"prod GET /api/books/999999999 -> {nst} "
+                    f"({'404 as book ch03 prescribes' if nst == 404 else 'not 404'})",
+                    nst)
+                # observation: malformed-body handling, only reachable if writes public
+                if public:
+                    mst, _ = req("POST", api, {"title": "x"})  # missing author/year
+                    obs["malformed_post_status"] = mst
+                    obs["malformed_gives_400"] = (mst == 400)
+                else:
+                    obs["malformed_post_status"] = \
+                        "not observable (writes auth-blocked in prod)"
+        finally:
+            pserve.stop()
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    score = sum(1 for v in h.values() if v["pass"])
+    return {"checks": h, "score": f"{score}/{len(h)}", "observations": obs}
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -359,11 +547,32 @@ def main():
                     help="override boot command, e.g. 'uv run tina4 serve'")
     ap.add_argument("--static-only", action="store_true",
                     help="skip serve + F-checks; run I-checks only")
+    ap.add_argument("--skip-hardening", action="store_true",
+                    help="skip the additive H-tier (prod-readiness / hygiene)")
+    ap.add_argument("--hardening-only", action="store_true",
+                    help="compute ONLY the H-tier and merge into existing "
+                         "results.json, preserving the frozen F/I scores")
     args = ap.parse_args()
 
     run_dir = Path(args.run_dir).resolve()
     if not run_dir.is_dir():
         sys.exit(f"run dir not found: {run_dir}")
+
+    out = run_dir / "results.json"
+
+    if args.hardening_only:
+        results = json.loads(out.read_text()) if out.exists() else {}
+        hardening = hardening_checks(run_dir, args.port, args.serve_cmd)
+        results["hardening"] = hardening["checks"]
+        results["hardening_score"] = hardening["score"]
+        results["hardening_observations"] = hardening["observations"]
+        out.write_text(json.dumps(results, indent=2))
+        print(json.dumps(
+            {"hardening_score": hardening["score"],
+             "hardening": {k: v["pass"] for k, v in hardening["checks"].items()},
+             "observations": hardening["observations"],
+             "results": str(out)}, indent=2))
+        return
 
     serve = Serve(run_dir, args.serve_cmd, args.port)
     try:
@@ -392,12 +601,22 @@ def main():
                                 if v.get("auth_blocked")],
     }
 
-    out = run_dir / "results.json"
+    if not (args.static_only or args.skip_hardening):
+        hardening = hardening_checks(run_dir, args.port, args.serve_cmd)
+        results["hardening"] = hardening["checks"]
+        results["hardening_score"] = hardening["score"]
+        results["hardening_observations"] = hardening["observations"]
+
     out.write_text(json.dumps(results, indent=2))
-    print(json.dumps({"functional_score": results["functional_score"],
-                      "idiom_score": results["idiom_score"],
-                      "auth_blocked": results["auth_blocked_checks"],
-                      "results": str(out)}, indent=2))
+    summary = {"functional_score": results["functional_score"],
+               "idiom_score": results["idiom_score"],
+               "auth_blocked": results["auth_blocked_checks"],
+               "results": str(out)}
+    if "hardening_score" in results:
+        summary["hardening_score"] = results["hardening_score"]
+        summary["hardening"] = {k: v["pass"]
+                                for k, v in results["hardening"].items()}
+    print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

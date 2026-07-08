@@ -1,0 +1,46 @@
+# Tina4 PHP — nginx configuration
+# Copy to /etc/nginx/sites-available/ and adjust server_name, root, fastcgi_pass.
+
+server {
+    listen 80;
+    server_name example.com;
+    root /var/www/tina4;
+    index index.php;
+
+    # Block sensitive files
+    location ~ /\.(env|htaccess|htpasswd|git) {
+        deny all;
+        return 404;
+    }
+    location ~ ^/(secrets|cache)/ {
+        deny all;
+        return 404;
+    }
+    location ~ ^/src/(routes|orm|services|app|templates|scss)/ {
+        deny all;
+        return 404;
+    }
+
+    # Static files from src/public/
+    location /src/public/ {
+        try_files $uri =404;
+    }
+
+    # Front controller
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP-FPM
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php-fpm.sock;
+        # TCP alternative: fastcgi_pass 127.0.0.1:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_param HTTP_AUTHORIZATION $http_authorization;
+        fastcgi_read_timeout 300;
+    }
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+}

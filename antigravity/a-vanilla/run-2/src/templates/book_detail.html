@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - {{ t("book_details") }}{% endblock %}
+
+{% block content %}
+<style>
+    .back-btn {
+        margin-bottom: 2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 3rem;
+        margin-bottom: 4rem;
+    }
+
+    @media (max-width: 768px) {
+        .detail-container {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+    }
+
+    .cover-pane {
+        width: 100%;
+    }
+
+    .cover-large {
+        width: 100%;
+        aspect-ratio: 2/3;
+        border-radius: 1rem;
+        border: 1px solid var(--border);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .cover-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cover-large-placeholder {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .cover-large-placeholder-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .info-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .title-area h2 {
+        font-size: 2.75rem;
+        line-height: 1.2;
+        letter-spacing: -0.04em;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, white, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .title-area .author-name {
+        font-size: 1.25rem;
+        color: var(--text-muted);
+    }
+
+    .meta-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 1.5rem 0;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .meta-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .meta-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .history-section {
+        margin-top: 2rem;
+    }
+
+    .history-section h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
+    }
+
+    .history-table-wrapper {
+        overflow-x: auto;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background: rgba(30, 41, 59, 0.3);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.95rem;
+    }
+
+    th, td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    th {
+        background: rgba(15, 23, 42, 0.6);
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+</style>
+
+<a href="/" class="btn btn-secondary back-btn">
+    &larr; Back to Catalog
+</a>
+
+<div class="detail-container">
+    <div class="cover-pane">
+        <div class="cover-large">
+            {% if book.cover_image %}
+                <img src="{{ book.cover_image }}" alt="{{ book.title }} Cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="cover-large-placeholder" style="display: none;">
+                    <div class="cover-large-placeholder-title">{{ book.title }}</div>
+                    <div style="color: var(--text-muted);">{{ book.author }}</div>
+                </div>
+            {% else %}
+                <div class="cover-large-placeholder">
+                    <div class="cover-large-placeholder-title">{{ book.title }}</div>
+                    <div style="color: var(--text-muted);">{{ book.author }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="info-pane">
+        <div class="title-area">
+            <h2>{{ book.title }}</h2>
+            <div class="author-name">by {{ book.author }}</div>
+        </div>
+
+        <div class="meta-list">
+            <div class="meta-item">
+                <span class="meta-label">{{ t("book_year") }}</span>
+                <span class="meta-value">{{ book.published_year }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">{{ t("book_isbn") }}</span>
+                <span class="meta-value">{{ book.isbn }}</span>
+            </div>
+            <div class="meta-item" style="grid-column: span 2;">
+                <span class="meta-label">{{ t("availability") }}</span>
+                <span class="meta-value" style="margin-top: 0.25rem;">
+                    {% if book.available %}
+                        <span class="badge badge-success" style="font-size: 0.9rem; padding: 0.35rem 1rem;">{{ t("available") }}</span>
+                    {% else %}
+                        <span class="badge badge-danger" style="font-size: 0.9rem; padding: 0.35rem 1rem;">{{ t("borrowed") }}</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>{{ t("borrow_history") }}</h3>
+            {% if book.history | length == 0 %}
+                <div class="glass-card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    {{ t("no_history") }}
+                </div>
+            {% else %}
+                <div class="history-table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ t("borrower") }}</th>
+                                <th>{{ t("borrow_date") }}</th>
+                                <th>{{ t("due_date") }}</th>
+                                <th>{{ t("status") }} / {{ t("returned_on") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in book.history %}
+                            <tr>
+                                <td style="font-weight: 500;">
+                                    {% if entry.member %}
+                                        {{ entry.member.name }}
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">{{ entry.member.email }}</div>
+                                    {% else %}
+                                        Unknown Member
+                                    {% endif %}
+                                </td>
+                                <td>{{ entry.loan.borrow_date }}</td>
+                                <td>{{ entry.loan.due_date }}</td>
+                                <td>
+                                    {% if entry.loan.returned == 1 %}
+                                        <span class="badge badge-success" style="margin-right: 0.5rem;">Returned</span>
+                                        <span style="font-size: 0.85rem; color: var(--text-muted);">{{ entry.loan.return_date }}</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Out on Loan</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

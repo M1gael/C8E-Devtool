@@ -1,0 +1,23 @@
+DirectoryIndex index.php
+RewriteEngine On
+
+# Block sensitive files (.env, .htaccess, secrets/)
+<FilesMatch "\.(env|htaccess|htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+# Uncomment below to force HTTPS (production only)
+# RewriteCond %{HTTPS} !=on
+# RewriteCond %{REQUEST_URI} !^/.well-known/ [NC]
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
+
+# Serve existing files and directories directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route everything else through Tina4
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Pass Authorization header to PHP (required for Bearer tokens)
+SetEnvIf Authorization .+ HTTP_AUTHORIZATION=$0

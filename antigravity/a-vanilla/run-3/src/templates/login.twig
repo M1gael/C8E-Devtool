@@ -1,0 +1,76 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="max-width: 450px; margin: 4rem auto;">
+    <div class="glass shadow-premium" style="border-radius: var(--radius-lg); padding: 2.5rem;">
+        <h2 style="font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 2rem; letter-spacing: -0.5px;">{{ t.t('login.title') }}</h2>
+        
+        <div id="error-container" style="display: none;" class="alert alert-danger"></div>
+        
+        {% if error == 'unauthorized' %}
+            <div class="alert alert-danger">{{ t.t('login.error_required') }}</div>
+        {% endif %}
+        
+        {% if logout_message %}
+            <div class="alert alert-success">{{ logout_message }}</div>
+        {% endif %}
+
+        <form id="login-form">
+            <div class="form-group">
+                <label class="form-label" for="email">{{ t.t('login.email_label') }}</label>
+                <input type="email" id="email" required placeholder="staff@library.com" class="form-control">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="password">{{ t.t('login.password_label') }}</label>
+                <input type="password" id="password" required placeholder="••••••••" class="form-control">
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;">
+                {{ t.t('login.submit_button') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorContainer = document.getElementById('error-container');
+    
+    errorContainer.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Save token to localStorage for API clients if needed
+            localStorage.setItem('token', data.token);
+            
+            // Redirect to dashboard
+            window.location.href = '/dashboard';
+        } else {
+            errorContainer.textContent = data.error || "{{ t.t('login.error_invalid') }}";
+            errorContainer.style.display = 'flex';
+        }
+    } catch (err) {
+        console.error(err);
+        errorContainer.textContent = "An unexpected error occurred. Please try again.";
+        errorContainer.style.display = 'flex';
+    }
+});
+</script>
+{% endblock %}

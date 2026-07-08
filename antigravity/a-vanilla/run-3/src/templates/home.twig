@@ -1,0 +1,61 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div class="hero">
+    <h1>{{ t.t('nav.title') }}</h1>
+    <p>{{ t.t('catalog.search_placeholder') }}</p>
+</div>
+
+<form action="/" method="GET" class="search-box glass shadow-premium">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-secondary); margin-left: 12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input type="text" name="search" value="{{ search }}" placeholder="{{ t.t('catalog.search_placeholder') }}" class="search-input">
+    <button type="submit" class="btn-primary">{{ t.t('catalog.search_button') }}</button>
+</form>
+
+{% if books %}
+    <div class="book-grid">
+        {% for book in books %}
+            <div class="book-card glass shadow-premium">
+                <div class="book-cover-container">
+                    <img src="{{ book.cover_image | default('/images/default_cover.jpg') }}" alt="{{ book.title }}" class="book-cover">
+                    {% if book.available %}
+                        <span class="badge badge-available">{{ t.t('catalog.available') }}</span>
+                    {% else %}
+                        <span class="badge badge-borrowed">{{ t.t('catalog.borrowed') }}</span>
+                    {% endif %}
+                </div>
+                <div class="book-info">
+                    <h3 class="book-title">{{ book.title }}</h3>
+                    <p class="book-author">{{ book.author }}</p>
+                    <div class="book-meta">
+                        <span>{{ t.t('catalog.year_label') }}: {{ book.published_year }}</span>
+                        <a href="/book/{{ book.id }}" class="btn-secondary" style="font-size: 0.85rem; padding: 6px 12px;">{{ t.t('catalog.view_details') }}</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+                <a href="?search={{ search }}&page={{ current_page - 1 }}&lang={{ active_lang }}" class="btn-secondary">&laquo; Previous</a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ current_page }} of {{ total_pages }}</span>
+            
+            {% if current_page < total_pages %}
+                <a href="?search={{ search }}&page={{ current_page + 1 }}&lang={{ active_lang }}" class="btn-secondary">Next &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="glass shadow-premium" style="text-align: center; padding: 3rem; border-radius: var(--radius-md);">
+        <p style="color: var(--text-secondary); font-size: 1.1rem;">{{ t.t('catalog.no_books') }}</p>
+        {% if search %}
+            <a href="/" class="btn-primary" style="margin-top: 1.5rem; display: inline-block;">Clear Search</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

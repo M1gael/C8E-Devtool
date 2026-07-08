@@ -1,0 +1,785 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("dashboard_title") }}{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1.5rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        letter-spacing: -0.04em;
+    }
+
+    .tabs-nav {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        padding: 0.4rem;
+        border-radius: 0.75rem;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+        color: var(--text-main);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header h2 {
+        font-size: 1.5rem;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    /* Modals */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+    }
+
+    .modal.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .modal-content {
+        max-width: 500px;
+        width: 100%;
+        margin: 1.5rem;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25rem;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .close-btn:hover {
+        color: white;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    /* Grid & Lists */
+    .admin-list {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.95rem;
+    }
+
+    .admin-list th, .admin-list td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .admin-list th {
+        background: rgba(15, 23, 42, 0.4);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .action-btn-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+    }
+</style>
+
+<div class="dashboard-header">
+    <div>
+        <h1>{{ t("dashboard_title") }}</h1>
+        <p style="color: var(--text-muted);">{{ t("welcome_staff", name=current_user.name) }}</p>
+    </div>
+</div>
+
+<div class="tabs-nav">
+    <button onclick="switchTab('books')" class="tab-btn active" id="tab-btn-books">📚 {{ t("tab_books") }}</button>
+    <button onclick="switchTab('members')" class="tab-btn" id="tab-btn-members">👥 {{ t("tab_members") }}</button>
+    <button onclick="switchTab('loans')" class="tab-btn" id="tab-btn-loans">🔁 {{ t("tab_loans") }}</button>
+    <button onclick="switchTab('audit')" class="tab-btn" id="tab-btn-audit">🛡️ {{ t("tab_audit") }}</button>
+</div>
+
+<!-- ================= MANAGE BOOKS TAB ================= -->
+<div id="tab-books" class="tab-content active">
+    <div class="glass-card">
+        <div class="section-header">
+            <h2>{{ t("tab_books") }}</h2>
+            <button onclick="openModal('add-book-modal')" class="btn btn-primary">+ {{ t("add_book") }}</button>
+        </div>
+        
+        <table class="admin-list">
+            <thead>
+                <tr>
+                    <th>{{ t("book_title") }}</th>
+                    <th>{{ t("book_author") }}</th>
+                    <th>{{ t("book_year") }}</th>
+                    <th>{{ t("book_isbn") }}</th>
+                    <th>{{ t("status") }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr id="book-row-{{ book.id }}">
+                    <td style="font-weight: 600;">{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.published_year }}</td>
+                    <td>{{ book.isbn }}</td>
+                    <td>
+                        {% if book.available %}
+                            <span class="badge badge-success">{{ t("available") }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">{{ t("borrowed") }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-btn-group">
+                            <button onclick="openEditBookModal({{ book | json_encode }})" class="btn btn-secondary btn-sm">Edit</button>
+                            {% if book.available %}
+                                <button onclick="deleteBook({{ book.id }})" class="btn btn-secondary btn-sm" style="color: var(--danger);">Delete</button>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.4; cursor: not-allowed;">Delete</button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= MANAGE MEMBERS TAB ================= -->
+<div id="tab-members" class="tab-content">
+    <div class="glass-card">
+        <div class="section-header">
+            <h2>{{ t("tab_members") }}</h2>
+            <button onclick="openModal('add-member-modal')" class="btn btn-primary">+ {{ t("add_member") }}</button>
+        </div>
+        
+        <table class="admin-list">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>{{ t("member_name") }}</th>
+                    <th>{{ t("member_email") }}</th>
+                    <th>{{ t("member_join") }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr id="member-row-{{ member.id }}">
+                    <td>#{{ member.id }}</td>
+                    <td style="font-weight: 600;">{{ member.name }}</td>
+                    <td>{{ member.email }}</td>
+                    <td>{{ member.join_date }}</td>
+                    <td>
+                        <div class="action-btn-group">
+                            <button onclick="openEditMemberModal({{ member | json_encode }})" class="btn btn-secondary btn-sm">Edit</button>
+                            <button onclick="deleteMember({{ member.id }})" class="btn btn-secondary btn-sm" style="color: var(--danger);">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= MANAGE LOANS TAB ================= -->
+<div id="tab-loans" class="tab-content">
+    <div class="glass-card">
+        <div class="section-header">
+            <h2>{{ t("tab_loans") }}</h2>
+            <button onclick="openModal('record-loan-modal')" class="btn btn-primary">📖 {{ t("record_loan") }}</button>
+        </div>
+        
+        <table class="admin-list">
+            <thead>
+                <tr>
+                    <th>{{ t("book_title") }}</th>
+                    <th>{{ t("borrower") }}</th>
+                    <th>{{ t("borrow_date") }}</th>
+                    <th>{{ t("due_date") }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                <tr>
+                    <td style="font-weight: 600;">{{ loan.book_title }}</td>
+                    <td>
+                        {{ loan.member_name }}
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">ID: #{{ loan.member_id }}</div>
+                    </td>
+                    <td>{{ loan.borrow_date }}</td>
+                    <td style="color: #f43f5e; font-weight: 500;">{{ loan.due_date }}</td>
+                    <td>
+                        <button onclick="recordReturn({{ loan.book_id }})" class="btn btn-secondary btn-sm">↩️ {{ t("record_return") }}</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= AUDIT LOG TAB ================= -->
+<div id="tab-audit" class="tab-content">
+    <div class="glass-card">
+        <div class="section-header">
+            <h2>{{ t("tab_audit") }}</h2>
+            <button onclick="refreshAuditLogs()" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        
+        <table class="admin-list">
+            <thead>
+                <tr>
+                    <th>{{ t("audit_timestamp") }}</th>
+                    <th>{{ t("audit_staff") }}</th>
+                    <th>{{ t("audit_action") }}</th>
+                    <th>{{ t("audit_details") }}</th>
+                </tr>
+            </thead>
+            <tbody id="audit-log-body">
+                <!-- Loaded dynamically on tab switch -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= ADD BOOK MODAL ================= -->
+<div id="add-book-modal" class="modal">
+    <div class="glass-card modal-content">
+        <div class="modal-header">
+            <h3>{{ t("add_book") }}</h3>
+            <button onclick="closeModal('add-book-modal')" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="handleAddBook(event)">
+            <div class="form-group">
+                <label for="book-title">{{ t("book_title") }}</label>
+                <input type="text" id="book-title" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="book-author">{{ t("book_author") }}</label>
+                <input type="text" id="book-author" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="book-year">{{ t("book_year") }}</label>
+                <input type="number" id="book-year" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="book-isbn">{{ t("book_isbn") }}</label>
+                <input type="text" id="book-isbn" class="form-control" placeholder="978-XXXXXXXXXX" required>
+            </div>
+            <div class="form-group">
+                <label for="book-cover">{{ t("book_cover") }}</label>
+                <input type="text" id="book-cover" class="form-control" placeholder="https://...">
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('add-book-modal')" class="btn btn-secondary">{{ t("cancel") }}</button>
+                <button type="submit" class="btn btn-primary">{{ t("save") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= EDIT BOOK MODAL ================= -->
+<div id="edit-book-modal" class="modal">
+    <div class="glass-card modal-content">
+        <div class="modal-header">
+            <h3>{{ t("edit_book") }}</h3>
+            <button onclick="closeModal('edit-book-modal')" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="handleEditBook(event)">
+            <input type="hidden" id="edit-book-id">
+            <div class="form-group">
+                <label for="edit-book-title">{{ t("book_title") }}</label>
+                <input type="text" id="edit-book-title" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-book-author">{{ t("book_author") }}</label>
+                <input type="text" id="edit-book-author" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-book-year">{{ t("book_year") }}</label>
+                <input type="number" id="edit-book-year" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-book-isbn">{{ t("book_isbn") }}</label>
+                <input type="text" id="edit-book-isbn" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-book-cover">{{ t("book_cover") }}</label>
+                <input type="text" id="edit-book-cover" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('edit-book-modal')" class="btn btn-secondary">{{ t("cancel") }}</button>
+                <button type="submit" class="btn btn-primary">{{ t("save") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= ADD MEMBER MODAL ================= -->
+<div id="add-member-modal" class="modal">
+    <div class="glass-card modal-content">
+        <div class="modal-header">
+            <h3>{{ t("add_member") }}</h3>
+            <button onclick="closeModal('add-member-modal')" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="handleAddMember(event)">
+            <div class="form-group">
+                <label for="member-name">{{ t("member_name") }}</label>
+                <input type="text" id="member-name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="member-email">{{ t("member_email") }}</label>
+                <input type="email" id="member-email" class="form-control" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('add-member-modal')" class="btn btn-secondary">{{ t("cancel") }}</button>
+                <button type="submit" class="btn btn-primary">{{ t("save") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= EDIT MEMBER MODAL ================= -->
+<div id="edit-member-modal" class="modal">
+    <div class="glass-card modal-content">
+        <div class="modal-header">
+            <h3>Edit Member</h3>
+            <button onclick="closeModal('edit-member-modal')" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="handleEditMember(event)">
+            <input type="hidden" id="edit-member-id">
+            <div class="form-group">
+                <label for="edit-member-name">{{ t("member_name") }}</label>
+                <input type="text" id="edit-member-name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-member-email">{{ t("member_email") }}</label>
+                <input type="email" id="edit-member-email" class="form-control" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('edit-member-modal')" class="btn btn-secondary">{{ t("cancel") }}</button>
+                <button type="submit" class="btn btn-primary">{{ t("save") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= RECORD LOAN MODAL ================= -->
+<div id="record-loan-modal" class="modal">
+    <div class="glass-card modal-content">
+        <div class="modal-header">
+            <h3>{{ t("record_loan") }}</h3>
+            <button onclick="closeModal('record-loan-modal')" class="close-btn">&times;</button>
+        </div>
+        <form onsubmit="handleRecordLoan(event)">
+            <div class="form-group">
+                <label for="loan-book-id">{{ t("select_book") }}</label>
+                <select id="loan-book-id" class="form-control" required>
+                    <option value="">-- Choose Book --</option>
+                    {% for book in books %}
+                        {% if book.available %}
+                            <option value="{{ book.id }}">{{ book.title }} by {{ book.author }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="loan-member-id">{{ t("select_member") }}</label>
+                <select id="loan-member-id" class="form-control" required>
+                    <option value="">-- Choose Member --</option>
+                    {% for member in members %}
+                        <option value="{{ member.id }}">{{ member.name }} ({{ member.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('record-loan-modal')" class="btn btn-secondary">{{ t("cancel") }}</button>
+                <button type="submit" class="btn btn-primary">{{ t("record_loan") }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('nav-dash').classList.add('active');
+
+    const staffToken = localStorage.getItem('staff_token') || '';
+
+    // Handle tab switching
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+        
+        if (tabId === 'audit') {
+            refreshAuditLogs();
+        }
+    }
+
+    // Modal management
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // Books CRUD
+    async function handleAddBook(event) {
+        event.preventDefault();
+        const title = document.getElementById('book-title').value;
+        const author = document.getElementById('book-author').value;
+        const published_year = document.getElementById('book-year').value;
+        const isbn = document.getElementById('book-isbn').value;
+        const cover_image = document.getElementById('book-cover').value;
+
+        try {
+            const res = await fetch('/api/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ title, author, published_year, isbn, cover_image })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    function openEditBookModal(book) {
+        document.getElementById('edit-book-id').value = book.id;
+        document.getElementById('edit-book-title').value = book.title;
+        document.getElementById('edit-book-author').value = book.author;
+        document.getElementById('edit-book-year').value = book.published_year;
+        document.getElementById('edit-book-isbn').value = book.isbn;
+        document.getElementById('edit-book-cover').value = book.cover_image || '';
+        openModal('edit-book-modal');
+    }
+
+    async function handleEditBook(event) {
+        event.preventDefault();
+        const id = document.getElementById('edit-book-id').value;
+        const title = document.getElementById('edit-book-title').value;
+        const author = document.getElementById('edit-book-author').value;
+        const published_year = document.getElementById('edit-book-year').value;
+        const isbn = document.getElementById('edit-book-isbn').value;
+        const cover_image = document.getElementById('edit-book-cover').value;
+
+        try {
+            const res = await fetch(`/api/books/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ title, author, published_year, isbn, cover_image })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    async function deleteBook(id) {
+        if (!confirm('Are you sure you want to delete this book?')) return;
+        try {
+            const res = await fetch(`/api/books/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${staffToken}`
+                }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                document.getElementById(`book-row-${id}`).remove();
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    // Members CRUD
+    async function handleAddMember(event) {
+        event.preventDefault();
+        const name = document.getElementById('member-name').value;
+        const email = document.getElementById('member-email').value;
+
+        try {
+            const res = await fetch('/api/members', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    function openEditMemberModal(member) {
+        document.getElementById('edit-member-id').value = member.id;
+        document.getElementById('edit-member-name').value = member.name;
+        document.getElementById('edit-member-email').value = member.email;
+        openModal('edit-member-modal');
+    }
+
+    async function handleEditMember(event) {
+        event.preventDefault();
+        const id = document.getElementById('edit-member-id').value;
+        const name = document.getElementById('edit-member-name').value;
+        const email = document.getElementById('edit-member-email').value;
+
+        try {
+            const res = await fetch(`/api/members/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ name, email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    async function deleteMember(id) {
+        if (!confirm('Are you sure you want to delete this member?')) return;
+        try {
+            const res = await fetch(`/api/members/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${staffToken}`
+                }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                document.getElementById(`member-row-${id}`).remove();
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    // Loans CRUD
+    async function handleRecordLoan(event) {
+        event.preventDefault();
+        const book_id = document.getElementById('loan-book-id').value;
+        const member_id = document.getElementById('loan-member-id').value;
+
+        try {
+            const res = await fetch('/api/loans', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ book_id, member_id })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    async function recordReturn(book_id) {
+        try {
+            const res = await fetch('/api/loans/return', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${staffToken}`
+                },
+                body: JSON.stringify({ book_id })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.error, 'error');
+            }
+        } catch (err) {
+            showToast('Network error.', 'error');
+        }
+    }
+
+    // Audit logs
+    async function refreshAuditLogs() {
+        const body = document.getElementById('audit-log-body');
+        body.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading audit logs...</td></tr>';
+        
+        try {
+            const res = await fetch('/api/audit-logs', {
+                headers: {
+                    'Authorization': `Bearer ${staffToken}`
+                }
+            });
+            if (res.ok) {
+                const logs = await res.json();
+                body.innerHTML = '';
+                if (logs.length === 0) {
+                    body.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No logs recorded yet.</td></tr>';
+                    return;
+                }
+                logs.forEach(l => {
+                    const tr = document.createElement('tr');
+                    
+                    let detailsPretty = '';
+                    try {
+                        const parsed = JSON.parse(l.details);
+                        detailsPretty = Object.entries(parsed).map(([k, v]) => `${k}: ${v}`).join(', ');
+                    } catch(e) {
+                        detailsPretty = l.details;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td style="color: var(--text-muted); font-size: 0.85rem;">${l.created_at}</td>
+                        <td style="font-weight: 500;">${l.staff_name} <span style="font-weight: normal; color: var(--text-muted); font-size: 0.8rem;">(ID: #${l.staff_id})</span></td>
+                        <td><span class="badge ${l.action.startsWith('delete') ? 'badge-danger' : 'badge-success'}">${l.action}</span></td>
+                        <td style="font-size: 0.9rem;">${detailsPretty}</td>
+                    `;
+                    body.appendChild(tr);
+                });
+            } else {
+                body.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger);">Failed to load audit logs. Unauthorized.</td></tr>';
+            }
+        } catch (err) {
+            body.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger);">Failed to load audit logs due to network error.</td></tr>';
+        }
+    }
+</script>
+{% endblock %}

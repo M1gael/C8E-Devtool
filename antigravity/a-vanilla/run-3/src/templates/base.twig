@@ -1,51 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ active_lang | default('en') }}">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}BookStack — Premium Library Manager{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A premium library manager and book tracker built with Tina4 Python.">
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for beautiful icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="/css/app.css">
-    {% block stylesheets %}{% endblock %}
+    <title>{% block title %}{{ t.t('nav.title') }}{% endblock %}</title>
+    <link rel="stylesheet" href="/css/style.css">
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar or Header -->
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fa-solid fa-book-bookmark logo-icon"></i>
-                    <span class="logo-text">Book<span class="highlight">Stack</span></span>
+    <header class="glass shadow-premium">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                {{ t.t('nav.title') }}
+            </a>
+            
+            <nav class="nav-menu">
+                <a href="/" class="nav-link {% if page == 'catalogue' %}active{% endif %}">{{ t.t('nav.catalogue') }}</a>
+                {% if user %}
+                    <a href="/dashboard" class="nav-link {% if page == 'dashboard' %}active{% endif %}">{{ t.t('nav.dashboard') }}</a>
+                    <a href="/logout" class="btn-secondary" style="font-size: 0.9rem; padding: 6px 14px;">{{ t.t('nav.logout') }}</a>
+                {% else %}
+                    <a href="/login" class="btn-primary" style="font-size: 0.9rem; padding: 6px 14px;">{{ t.t('nav.login') }}</a>
+                {% endif %}
+                
+                <div class="lang-switcher">
+                    <a href="?lang=en" class="lang-btn {% if active_lang == 'en' %}active{% endif %}">EN</a>
+                    <a href="?lang=es" class="lang-btn {% if active_lang == 'es' %}active{% endif %}">ES</a>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn-primary" onclick="openAddModal()">
-                        <i class="fa-solid fa-plus"></i> Add New Book
-                    </button>
-                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% if flash_message %}
+            <div class="alert alert-{{ flash_type | default('info') }} shadow-premium">
+                {{ flash_message }}
             </div>
-        </header>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
 
-        <!-- Main Content -->
-        <main class="app-main">
-            {% block content %}{% endblock %}
-        </main>
-
-        <!-- Footer -->
-        <footer class="app-footer">
-            <p>&copy; 2026 BookStack Library Manager. Built with <a href="https://tina4.com" target="_blank">Tina4 Python</a> &amp; SQLite.</p>
-        </footer>
-    </div>
-
-    <!-- Scripts -->
-    <script src="/js/tina4.min.js" ignore missing></script>
-    <script src="/js/frond.min.js" ignore missing></script>
-    {% block javascripts %}{% endblock %}
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 {{ t.t('nav.title') }}. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    {% block scripts %}{% endblock %}
 </body>
 </html>

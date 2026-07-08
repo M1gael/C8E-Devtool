@@ -1,0 +1,75 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<a href="/" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 2rem;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    {{ t.t('book.back_to_catalog') }}
+</a>
+
+<div class="glass shadow-premium details-grid" style="border-radius: var(--radius-lg); padding: 2rem;">
+    <div style="text-align: center;">
+        <img src="{{ book.cover_image | default('/images/default_cover.jpg') }}" alt="{{ book.title }}" class="detail-cover shadow-premium">
+    </div>
+    
+    <div>
+        <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.5px;">{{ book.title }}</h2>
+        <p style="color: var(--primary); font-size: 1.2rem; font-weight: 500; margin-bottom: 2rem;">by {{ book.author }}</p>
+        
+        <div class="detail-meta-list">
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">{{ t.t('catalog.isbn_label') }}</span>
+                <span>{{ book.isbn }}</span>
+            </div>
+            <div class="detail-meta-item">
+                <span class="detail-meta-label">{{ t.t('catalog.year_label') }}</span>
+                <span>{{ book.published_year }}</span>
+            </div>
+            <div class="detail-meta-item" style="border-bottom: none;">
+                <span class="detail-meta-label">{{ t.t('book.status') }}</span>
+                {% if book.available %}
+                    <span class="badge badge-available" style="position: static;">{{ t.t('catalog.available') }}</span>
+                {% else %}
+                    <span class="badge badge-borrowed" style="position: static;">{{ t.t('catalog.borrowed') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="margin-top: 3rem;">
+            <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">{{ t.t('book.history_title') }}</h3>
+            
+            {% if book.loans %}
+                <div class="table-container glass">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ t.t('book.borrower') }}</th>
+                                <th>{{ t.t('book.borrow_date') }}</th>
+                                <th>{{ t.t('book.due_date') }}</th>
+                                <th>{{ t.t('book.return_date') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in book.loans %}
+                                <tr>
+                                    <td style="font-weight: 500;">{{ loan.member_name }}</td>
+                                    <td>{{ loan.borrow_date }}</td>
+                                    <td>{{ loan.due_date }}</td>
+                                    <td>
+                                        {% if loan.returned_date %}
+                                            <span style="color: var(--success); font-weight: 500;">{{ loan.returned_date }}</span>
+                                        {% else %}
+                                            <span style="color: var(--danger); font-weight: 600; text-transform: uppercase; font-size: 0.8rem;">{{ t.t('catalog.borrowed') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: var(--text-secondary); font-style: italic;">{{ t.t('book.no_history') }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -15,3 +15,9 @@ logs/
 
 # Secrets scaffolded by tina4 (JWT keys)
 secrets/
+
+# downloaded reference (tina4 books) — reproducible, not vendored
+tina4-book/
+
+# per-run docs pulled by the agent (tina4 docs) — reproducible; presence logged in findings
+.tina4-docs/

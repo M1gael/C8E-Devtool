@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("login_title") }}{% endblock %}
+
+{% block content %}
+<style>
+    .login-container {
+        max-width: 440px;
+        margin: 4rem auto;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .login-header h2 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.04em;
+    }
+
+    .login-header p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .login-card {
+        padding: 2.5rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        margin-top: 1.5rem;
+        padding: 0.8rem;
+        font-size: 1rem;
+    }
+    
+    .error-block {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: var(--danger);
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        display: none;
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-header">
+        <h2>{{ t("login_title") }}</h2>
+        <p>Sign in to manage catalog, members, and active loans.</p>
+    </div>
+
+    <div class="glass-card login-card">
+        <div id="error-message" class="error-block"></div>
+        
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">{{ t("login_email") }}</label>
+                <input type="email" id="email" class="form-control" placeholder="staff@library.com" required autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">{{ t("login_password") }}</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-submit">{{ t("btn_login") }}</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('nav-login').classList.add('active');
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errBlock = document.getElementById('error-message');
+        
+        errBlock.style.display = 'none';
+        errBlock.textContent = '';
+        
+        try {
+            const response = await fetch('/api/staff/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Save token locally as well if needed, but session is set.
+                localStorage.setItem('staff_token', result.token);
+                showToast(result.message || 'Login successful!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 8000); // Give user enough time to see the toast, or just redirect. Wait, redirecting after 800ms is standard, let's do 800ms.
+                // Wait, it says 8000 (8 seconds). Let's change that to 800ms for a speedy redirection!
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 800);
+            } else {
+                errBlock.textContent = result.error || 'Invalid email or password.';
+                errBlock.style.display = 'block';
+                showToast(result.error || 'Login failed.', 'error');
+            }
+        } catch (err) {
+            errBlock.textContent = 'An network error occurred. Please try again.';
+            errBlock.style.display = 'block';
+            showToast('Network error.', 'error');
+            console.error(err);
+        }
+    }
+</script>
+{% endblock %}

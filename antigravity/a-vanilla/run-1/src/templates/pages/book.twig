@@ -1,0 +1,81 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <a href="/" class="btn btn-secondary btn-sm">&larr; Back to Catalog</a>
+</div>
+
+<div class="details-container">
+    {% if book.cover_image %}
+        <div class="details-cover" style="background-image: url('{{ book.cover_image }}');"></div>
+    {% else %}
+        <div class="details-cover" style="background: linear-gradient(135deg, #1e1b4b, #311042); display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem; box-sizing: border-box;">
+            <div style="font-weight: 800; font-size: 2rem; color: rgba(255,255,255,0.8);">{{ book.title }}</div>
+        </div>
+    {% endif %}
+
+    <div class="details-info">
+        <h1>{{ book.title }}</h1>
+        <p class="details-author">by {{ book.author }}</p>
+
+        <div class="meta-list">
+            <div class="meta-item">
+                <div class="meta-label">{{ "isbn" | trans(locale) }}</div>
+                <div class="meta-value">{{ book.isbn }}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">{{ "published_year" | trans(locale) }}</div>
+                <div class="meta-value">{{ book.published_year }}</div>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <span class="status-label">{{ "availability" | trans(locale) }}:</span>
+            {% if book.is_available %}
+                <span class="status-pill available">{{ "available" | trans(locale) }}</span>
+            {% else %}
+                <span class="status-pill borrowed">{{ "borrowed" | trans(locale) }}</span>
+                <span style="color: #94a3b8; font-size: 0.9rem;">
+                    (Due: {{ current_loan.due_date }})
+                </span>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: auto;">
+            <h2>{{ "borrowing_history" | trans(locale) }}</h2>
+            {% if loans %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ "member" | trans(locale) }}</th>
+                                <th>{{ "borrow_date" | trans(locale) }}</th>
+                                <th>{{ "due_date" | trans(locale) }}</th>
+                                <th>{{ "return_date" | trans(locale) }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                                <tr>
+                                    <td>{{ loan.member_name }}</td>
+                                    <td>{{ loan.borrow_date }}</td>
+                                    <td>{{ loan.due_date }}</td>
+                                    <td>
+                                        {% if loan.returned %}
+                                            <span style="color: #10b981;">{{ loan.returned_date }}</span>
+                                        {% else %}
+                                            <span style="color: #ef4444; font-weight: 600;">{{ "active" | trans(locale) }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color: #94a3b8; font-style: italic;">No borrowing history found for this book.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

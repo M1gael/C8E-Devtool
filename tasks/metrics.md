@@ -29,6 +29,15 @@ No single reliable source. In priority order:
 If tokens are unobtainable, leave `tokens: null` — do not fabricate. A run with no
 token number is still valid on the functional/idiom scores.
 
+## Session-bucket % (coarse config-cost proxy)
+
+When raw tokens aren't exposed, record the **% of the tool's rate-limit window** the
+runs consume, read from the IDE's own usage meter. For Antigravity Pro this is the
+5-hour session bucket. Capture it **per config phase** (cumulative across that phase's
+3 runs) — too coarse to attribute per-run reliably, but a valid A-vs-B-vs-C cost
+comparison for the same task. Record in the phase's Run notes, not `run.json`.
+Phase A (a-vanilla): **38% of the 5h bucket** for all 3 runs (2026-07-07).
+
 ## run.json template
 
 Written into each `run-N/` at freeze (step 4 of run-protocol.md):

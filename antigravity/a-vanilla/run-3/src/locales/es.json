@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "title": "Biblioteca Lend",
+    "catalogue": "Catálogo",
+    "dashboard": "Panel de Control",
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "lang_en": "Inglés",
+    "lang_es": "Español"
+  },
+  "catalog": {
+    "search_placeholder": "Buscar por título, autor o año...",
+    "search_button": "Buscar",
+    "title_label": "Título",
+    "author_label": "Autor",
+    "year_label": "Año",
+    "isbn_label": "ISBN",
+    "status_label": "Estado",
+    "available": "Disponible",
+    "borrowed": "Prestado / No Disponible",
+    "view_details": "Ver Detalles",
+    "no_books": "No se encontraron libros en el catálogo."
+  },
+  "book": {
+    "details_title": "Detalles del Libro",
+    "back_to_catalog": "Volver al Catálogo",
+    "history_title": "Historial de Préstamos",
+    "no_history": "Este libro nunca ha sido prestado.",
+    "borrower": "Lector",
+    "borrow_date": "Fecha de Préstamo",
+    "due_date": "Fecha de Vencimiento",
+    "return_date": "Fecha de Devolución",
+    "status": "Estado Actual"
+  },
+  "login": {
+    "title": "Iniciar Sesión (Personal)",
+    "email_label": "Correo Electrónico",
+    "password_label": "Contraseña",
+    "submit_button": "Entrar",
+    "error_invalid": "Correo electrónico o contraseña inválidos.",
+    "error_required": "Por favor inicie sesión para acceder a esta área."
+  },
+  "dashboard": {
+    "title": "Panel de Gestión del Personal",
+    "welcome": "Bienvenido de nuevo, {name}",
+    "books_tab": "Libros",
+    "members_tab": "Miembros",
+    "loans_tab": "Préstamos y Devoluciones",
+    "audit_tab": "Registros de Auditoría",
+    "add_book": "Agregar Libro",
+    "edit_book": "Editar Libro",
+    "delete_book": "Eliminar",
+    "add_member": "Agregar Miembro",
+    "edit_member": "Editar",
+    "delete_member": "Eliminar",
+    "record_loan_title": "Registrar Préstamo de Libro",
+    "return_book_title": "Registrar Devolución de Libro",
+    "member_label": "Seleccionar Miembro",
+    "book_label": "Seleccionar Libro",
+    "borrow_date_label": "Fecha de Préstamo",
+    "due_date_label": "Fecha de Vencimiento",
+    "record_loan_button": "Registrar Préstamo",
+    "return_button": "Devolver Libro",
+    "no_members": "No hay miembros registrados aún.",
+    "no_logs": "No hay registros de auditoría aún.",
+    "search_members": "Buscar miembros..."
+  }
+}

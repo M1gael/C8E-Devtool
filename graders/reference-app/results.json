@@ -10,7 +10,7 @@
     },
     "F3": {
       "pass": true,
-      "evidence": "POST /api/books -> 201: {\"id\":1,\"title\":\"Grader Book 1430f98f\",\"author\":\"Grader\",\"published_year\":2020}"
+      "evidence": "POST /api/books -> 201: {\"id\":5,\"title\":\"Grader Book 025efa6b\",\"author\":\"Grader\",\"published_year\":2020}"
     },
     "F4": {
       "pass": true,
@@ -18,7 +18,7 @@
     },
     "F5": {
       "pass": true,
-      "evidence": "GET /api/books/1 -> 200"
+      "evidence": "GET /api/books/5 -> 200"
     },
     "F6": {
       "pass": true,
@@ -53,7 +53,7 @@
     },
     "I3": {
       "pass": true,
-      "evidence": "templates: ['base.twig', 'books.twig'], render() used: True, inline HTML in routes: False"
+      "evidence": "templates: ['base.twig', 'books.twig'], template render (render()/@template): True, inline HTML in routes: False"
     },
     "I4": {
       "pass": true,

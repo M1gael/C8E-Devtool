@@ -1,8 +1,6 @@
-.venv/
-__pycache__/
-*.pyc
-*.pyo
+vendor/
 data/
 logs/
+cache/
 secrets/
 .env

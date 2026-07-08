@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "title": "Lend Library",
+    "catalogue": "Catalogue",
+    "dashboard": "Staff Dashboard",
+    "login": "Staff Sign In",
+    "logout": "Sign Out",
+    "lang_en": "English",
+    "lang_es": "Spanish"
+  },
+  "catalog": {
+    "search_placeholder": "Search by title, author, or year...",
+    "search_button": "Search",
+    "title_label": "Title",
+    "author_label": "Author",
+    "year_label": "Year",
+    "isbn_label": "ISBN",
+    "status_label": "Status",
+    "available": "Available",
+    "borrowed": "Borrowed / Out on Loan",
+    "view_details": "View Details",
+    "no_books": "No books found in the library catalogue."
+  },
+  "book": {
+    "details_title": "Book Details",
+    "back_to_catalog": "Back to Catalogue",
+    "history_title": "Borrowing History",
+    "no_history": "This book has never been borrowed.",
+    "borrower": "Borrower",
+    "borrow_date": "Borrow Date",
+    "due_date": "Due Date",
+    "return_date": "Return Date",
+    "status": "Current Status"
+  },
+  "login": {
+    "title": "Staff Sign In",
+    "email_label": "Email Address",
+    "password_label": "Password",
+    "submit_button": "Sign In",
+    "error_invalid": "Invalid email or password.",
+    "error_required": "Please log in to access this area."
+  },
+  "dashboard": {
+    "title": "Staff Management Dashboard",
+    "welcome": "Welcome back, {name}",
+    "books_tab": "Books",
+    "members_tab": "Members",
+    "loans_tab": "Record Loan / Return",
+    "audit_tab": "Audit Logs",
+    "add_book": "Add Book",
+    "edit_book": "Edit Book",
+    "delete_book": "Delete",
+    "add_member": "Add Member",
+    "edit_member": "Edit",
+    "delete_member": "Delete",
+    "record_loan_title": "Record Book Loan",
+    "return_book_title": "Record Book Return",
+    "member_label": "Select Member",
+    "book_label": "Select Book",
+    "borrow_date_label": "Borrow Date",
+    "due_date_label": "Due Date",
+    "record_loan_button": "Record Loan",
+    "return_button": "Return Book",
+    "no_members": "No members registered yet.",
+    "no_logs": "No audit log entries recorded yet.",
+    "search_members": "Search members..."
+  }
+}
