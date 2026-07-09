@@ -39,15 +39,21 @@ sys.path.insert(0, str(Path(__file__).parent))
 from grade_run import Serve  # frozen v1 grader; reuse the process manager only
 
 HTTP_TIMEOUT = 15
+# runtime residue (root log/db files a fresh checkout would not have) is excluded
+# too — c-mcp run-1 left receipts.log + test.db at the root, and a stale
+# receipts.log in the copy would mask F13's new-artifact detection
 COPY_EXCLUDE = {".venv", "venv", "__pycache__", ".git", "node_modules",
-                ".tina4-docs", ".pytest_cache", "logs"}
+                ".tina4-docs", ".pytest_cache", "logs",
+                "receipts.log", "hub-serve.log", "test.db", "test.db-shm", "test.db-wal"}
 
 # ---------------------------------------------------------------- adapters
 
 # Per-run endpoint maps. Discovered by reading each run's src/routes (2026-07-08);
 # the SPEC never fixed an API shape, so each run legitimately chose its own.
+# Keyed by "<config>/<run>" since 2026-07-09: config C reuses run names run-1..3,
+# so run_dir.name alone would collide with the a-vanilla adapters.
 ADAPTERS = {
-    "run-1": {
+    "a-vanilla/run-1": {
         "login": ("/api/auth/login", {"username": "admin", "password": "staffpassword"}),
         "books": "/api/books",
         "book": "/api/books/{id}",
@@ -61,7 +67,7 @@ ADAPTERS = {
         "mail_globs": ["data/mailbox/**/*", "data/queue/**/*"],
         "staff_names": ["Library Admin", "admin"],
     },
-    "run-2": {
+    "a-vanilla/run-2": {
         "login": ("/api/staff/login", {"email": "staff@library.com", "password": "password123"}),
         "books": "/api/books",
         "book": "/api/books/{id}",
@@ -80,7 +86,7 @@ ADAPTERS = {
     # /api/books — first run to split them, hence the books_read key (read-site
     # fallback added for it; other runs unaffected). Creds seeded by migration,
     # documented in its BLOG.md. Lang switch is a ?lang= query param + session.
-    "run-3": {
+    "a-vanilla/run-3": {
         "login": ("/api/auth/login", {"email": "staff@library.com", "password": "password123"}),
         "books": "/api/books",
         "books_read": "/api/catalogue",
@@ -94,6 +100,57 @@ ADAPTERS = {
         "lang_setup": None, "lang_page": "/?lang=es", "locale_file": "src/locales/es.json",
         "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
         "staff_names": ["Library Staff", "staff@library.com"],
+    },
+    # c-mcp run-1 (built 2026-07-09, BARE v2.1 prompt — undirected MCP discovery).
+    # Shapes read from src/routes/api.py. Login /api/login is username-based; seed
+    # admin/admin123 verified against the migration's pbkdf2 hash. Members REQUIRE
+    # join_date (member_body mechanism added for it). Cover upload is base64-in-JSON
+    # (cover_image_base64 + cover_image_filename), not multipart -> upload mechanism.
+    # Own suite lives at src/test/ (not tests/) -> test_cmd. Receipts append to
+    # ./receipts.log; queue messages are files under data/queue/emails/.
+    "c-mcp/run-1": {
+        "login": ("/api/login", {"username": "admin", "password": "admin123"}),
+        "books": "/api/books",
+        "book": "/api/books/{id}",
+        "members": "/api/members",
+        "member_body": {"name": "Jane Reader", "email": "jane.reader@example.com",
+                        "join_date": "2026-07-09"},
+        "loans": "/api/loans",
+        "loan_return": lambda loan_id, book_id: ("/api/loans/return/%s" % loan_id, {}),
+        "audit": "/api/audit-logs",
+        "search_param": "search", "page_param": "page", "limit_param": "limit",
+        "loan_body": lambda bid, mid: {"book_id": bid, "member_id": mid, "due_date": "2026-08-01"},
+        "lang_setup": "/lang/es", "lang_page": "/", "locale_file": "src/locales/es.json",
+        "mail_globs": ["receipts.log", "data/queue/**/*", "data/mailbox/**/*"],
+        "staff_names": ["admin"],
+        "upload": "base64-json",
+        # suite is unittest-style; `tina4 test` can't run it (pytest never declared
+        # as a dependency — logged) and pytest isn't installable from its lockfile,
+        # so the faithful runner is stdlib unittest at the suite's real location
+        "test_cmd": "uv run python -m unittest discover -s src/test -v",
+        "prompt": "v2.1 (bare)",
+    },
+    # c-mcp run-2 (built 2026-07-09, v2.2-C prompt — directed tina4_context retrieval).
+    # Shapes read from src/routes/api.py. Pagination is limit/offset (no page param)
+    # -> page_value mechanism maps grader pages to offsets. Return endpoint takes the
+    # loan id in the body. Audit lives at /api/staff/logs. Seed staff@library.com/
+    # password123 verified against the migration hash. cover_image is a pass-through
+    # string (no multipart, no base64) — F15 graded with the default multipart probe.
+    "c-mcp/run-2": {
+        "login": ("/api/staff/login", {"email": "staff@library.com", "password": "password123"}),
+        "books": "/api/books",
+        "book": "/api/books/{id}",
+        "members": "/api/members",
+        "loans": "/api/loans",
+        "loan_return": lambda loan_id, book_id: ("/api/loans/return", {"loan_id": loan_id}),
+        "audit": "/api/staff/logs",
+        "search_param": "search", "page_param": "offset", "limit_param": "limit",
+        "page_value": lambda page, limit: (page - 1) * limit,
+        "loan_body": lambda bid, mid: {"book_id": bid, "member_id": mid, "due_date": "2026-08-01"},
+        "lang_setup": None, "lang_page": "/?lang=es", "locale_file": "src/locales/es.json",
+        "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
+        "staff_names": ["Librarian", "staff@library.com"],
+        "prompt": "v2.2-C (directed tina4_context)",
     },
 }
 
@@ -327,9 +384,12 @@ class Grader:
                      {"title": "GRADERBOOK-Bulk %03d" % i, "author": "Bulk Writer",
                       "published_year": 1990, "isbn": "978-1-00-%06d-0" % i, "cover_image": ""},
                      token=self.token)
+            # page_value maps grader page numbers onto the run's paging scheme
+            # (default: pages 1,2; c-mcp run-2 is limit/offset -> offsets 0,10)
+            pv = a.get("page_value", lambda page, limit: page)
             q = "?%s=Bulk&%s=10&%s=" % (a["search_param"], a["limit_param"], a["page_param"])
-            st1, p1 = req2("GET", self.url(books_read) + q + "1")
-            st2, p2 = req2("GET", self.url(books_read) + q + "2")
+            st1, p1 = req2("GET", self.url(books_read) + q + str(pv(1, 10)))
+            st2, p2 = req2("GET", self.url(books_read) + q + str(pv(2, 10)))
             ids1 = set(re.findall(r"GRADERBOOK-Bulk \d+", p1))
             ids2 = set(re.findall(r"GRADERBOOK-Bulk \d+", p2))
             ok = st1 == st2 == 200 and ids1 and ids2 and ids1 != ids2 and len(ids1) <= 10
@@ -338,9 +398,9 @@ class Grader:
                    "Page smoothly through tens of thousands of titles.", f9)
 
         def f10():
-            st, tx = req2("POST", self.url(a["members"]),
-                          {"name": "Jane Reader", "email": "jane.reader@example.com"},
-                          token=self.token)
+            # member_body: run-specific required fields (c-mcp run-1 requires join_date)
+            mbody = a.get("member_body", {"name": "Jane Reader", "email": "jane.reader@example.com"})
+            st, tx = req2("POST", self.url(a["members"]), mbody, token=self.token)
             self.member_id = find_id(jload(tx))
             if not self.member_id:
                 return False, "member create failed: %s" % st
@@ -418,6 +478,26 @@ class Grader:
 
         def f15():
             png = b"\x89PNG\r\n\x1a\n" + os.urandom(64)
+            if a.get("upload") == "base64-json":
+                # run's documented upload shape: base64 payload inside the JSON body
+                # (c-mcp run-1: cover_image_base64 + cover_image_filename); same bar —
+                # the stored cover must then be servable
+                import base64 as _b64
+                st, tx = req2("POST", self.url(a["books"]),
+                              {"title": "GRADERBOOK-Upload", "author": "Up Loader",
+                               "published_year": 2010, "isbn": "978-0-00-000002-4",
+                               "cover_image_base64": _b64.b64encode(png).decode(),
+                               "cover_image_filename": "cover.png"}, token=self.token)
+                if not (200 <= st < 300):
+                    return False, "base64 upload rejected: %s" % st
+                bid = find_id(jload(tx))
+                st2, tx2 = req2("GET", self.url(a["book"].format(id=bid or 0)))
+                m = re.search(r'"cover[^"]*"\s*:\s*"([^"]+)"', tx2)
+                if not (m and m.group(1).strip()):
+                    return False, "upload accepted but no stored cover path returned"
+                loc = m.group(1)
+                st3, _ = req2("GET", self.url(loc) if loc.startswith("/") else loc)
+                return st3 == 200, "base64 accepted, cover at %s -> %s" % (loc, st3)
             for field in ("cover_image", "file", "cover"):
                 raw, ct = multipart({"title": "GRADERBOOK-Upload", "author": "Up Loader",
                                      "published_year": 2010, "isbn": "978-0-00-000002-4"},
@@ -545,8 +625,13 @@ class Grader:
         def t1():
             # Canonical runner first (book ch18: `tina4 test` = pytest over tests/);
             # fall back only when the RUNNER is unusable, never because tests are red.
+            # test_cmd: run-specific suite location (c-mcp run-1 keeps its suite in
+            # src/test/, which none of the standard runners discover) — the suite
+            # still has to pass on its own.
             runners = ["tina4 test", "uv run pytest tests/ -q",
                        "uv run python -m unittest discover -s tests -v"]
+            if self.a.get("test_cmd"):
+                runners.insert(1, self.a["test_cmd"])
             log, verdict, tail = "", None, ""
             for cmd in runners:
                 p = subprocess.run(cmd, cwd=str(dest), capture_output=True,
@@ -640,7 +725,8 @@ class Grader:
     # ---------------- driver ----------------
     def grade(self):
         stamp = {"graded_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-                 "task": "query-spec-v2.md v2.1", "port": self.port}
+                 "task": "query-spec-v2.md",
+                 "prompt": self.a.get("prompt", "v2.1"), "port": self.port}
         lock = self.run_dir / "uv.lock"
         if lock.exists():
             m = re.search(r'name = "tina4-python"\s*\nversion = "([^"]+)"', lock.read_text())
@@ -680,9 +766,10 @@ def main():
     ap.add_argument("--skip-tests", action="store_true")
     args = ap.parse_args()
     run_dir = Path(args.run_dir).resolve()
-    adapter = ADAPTERS.get(run_dir.name)
+    key = "%s/%s" % (run_dir.parent.name, run_dir.name)
+    adapter = ADAPTERS.get(key)
     if not adapter:
-        sys.exit("no adapter for %s (known: %s)" % (run_dir.name, list(ADAPTERS)))
+        sys.exit("no adapter for %s (known: %s)" % (key, list(ADAPTERS)))
     Grader(run_dir, adapter, args.port, args.keep, args.skip_tests).grade()
 
 

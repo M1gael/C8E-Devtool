@@ -15,7 +15,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
-| Antigravity v1.107.0 | C — +MCP | ▶ built 2026-07-09 (bare v2.1), ungraded | ▶ built 2026-07-09 (directed-context v2.2-C, ~26% burn), ungraded | — | baselines/C-mcp/ |
+| Antigravity v1.107.0 | C — +MCP | ✓ 29/30 (bare v2.1) | ✓ 28/30 (directed-context v2.2-C, ~26% burn) | — | baselines/C-mcp/ · results-v2.json per run |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -402,7 +402,8 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   standalone restore.py; commit-before-pack is the backstop. First exercised for
   c-mcp/run-1: 14 entries moved out, repo showed only `antigravity/c-mcp/run-1`;
   restored 14/14 clean (git fsck ok) after the run.
-- **c-mcp run-1 built + committed (caef892), ungraded.** Python, on-pin
+- **c-mcp run-1 built + committed (caef892), graded 2026-07-09 → 29/30 (see
+  "Config C runs 1–2 graded" below).** Python, on-pin
   (pyproject + uv.lock). Left root-level runtime residue (`test.db-shm/wal`,
   `receipts.log`) outside its own gitignore's `data/`+`logs/` — excluded from the
   frozen commit (source only); minor cleanliness note, not scored. `.env.local`
@@ -417,7 +418,8 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   guard held during the run window (root = `antigravity/c-mcp/run-1` only), and any
   root-level write by ANYONE lands visibly in `git status` at restore time — which
   is how this was caught. Do not count against config C.
-- **c-mcp run-2 built (2026-07-09, directed-context variant), ungraded.**
+- **c-mcp run-2 built (2026-07-09, directed-context variant), graded same day →
+  28/30 (see "Config C runs 1–2 graded" below).**
   Prompt v2.2-C: same v2.1 brief + a "Framework knowledge" block directing the
   agent to use ONLY the MCP `tina4_context` retrieval tool for framework knowledge
   and to write all application code itself (no tina4_code/review/chat codegen).
@@ -428,6 +430,62 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   Build shape at a glance: pyproject + uv.lock (Python, on-pin), migrations/,
   src/, tests/, BLOG.md, plus a `plan/` dir (new — first run to leave its planning
   artifacts); `.env`/`secrets/`/`.tina4/` all gitignore-covered.
+
+### Config C runs 1–2 graded (2026-07-09)
+
+- **c-mcp GRADED: run-1 29/30 (bare v2.1) · run-2 28/30 (directed v2.2-C).**
+  run-1: F **16/16** (first perfect F-tier of the whole eval) · P 4/4 · T 1/1 · S 6/7.
+  run-2: F 14/16 · P 4/4 · T 1/1 · S 7/7. Config A for comparison: 27 · 28 · 16.
+  Check logic frozen; per-run adapters read from each build's src/routes. Both
+  runs' seeded creds verified cryptographically against their migration pbkdf2
+  hashes before any server was booted (run-1 admin/admin123, run-2
+  staff@library.com/password123 — run-2's BLOG documents no credentials at all;
+  the hash was the only source of truth).
+- **Grader mechanics added for config C (shape-mapping only; defaults keep the
+  a-vanilla semantics exactly, those runs NOT regraded):** ADAPTERS now keyed by
+  `<config>/<run>` (c-mcp reuses run-1..3 names — `run_dir.name` alone collided
+  with the a-vanilla adapters); `member_body` (run-1 requires join_date);
+  `page_value` (run-2 paginates by limit/offset, no page param — grader pages 1,2
+  map to offsets 0,10); `upload: "base64-json"` (run-1's documented upload shape:
+  cover_image_base64 + cover_image_filename in the JSON body, same bar — stored
+  cover must serve 200); `test_cmd` (run-1's suite location); root runtime residue
+  (receipts.log, test.db*, hub-serve.log) excluded from grading copies — a stale
+  receipts.log copied in would have masked F13's new-artifact detection.
+- **T1 trail (run-1): first pass FAIL → runner corrected → PASS (29/30 final).**
+  First grade ran T1 red ("no runner could execute the suite"): `tina4 test` →
+  "No module named pytest" (FW-04's silent-exit-0 pattern, second sighting),
+  `pytest` not spawnable from its lockfile, unittest fallback pointed at the empty
+  tests/ dir. Verified standalone BEFORE regrading: the suite runs green via
+  stdlib unittest at its real location — `uv run python -m unittest discover -s
+  src/test -v` → 8/8 OK. test_cmd adapter now invokes exactly that; per the
+  grader's frozen rule, runner unavailability is never scored as a red suite.
+- **AG-C1-02 — run-1 ships NO .gitignore; secret-bearing `.env.local` unignored
+  (S6, the run's only red).** `.env.local` carries the generated TINA4_SECRET and
+  nothing in the run covers it. (The eval repo's root .gitignore happens to cover
+  it here, but the run is graded as a standalone product.)
+- **AG-C1-03 — run-1's suite is not executable by the canonical runner.** pytest
+  never declared in pyproject; suite is stdlib-unittest at `src/test/` (book ch18
+  convention is pytest over `tests/` — run-1's root tests/ exists but is EMPTY);
+  BLOG gives no test command. Combined with FW-04, `tina4 test` on this project
+  prints a pytest error yet exits 0. Friction/hygiene note — the suite itself
+  passes (T1 green after runner fix).
+- **AG-C2-01 — run-2 has no functional cover upload (F15).** POST /api/books
+  accepts a multipart body (2xx) but ignores the file part; cover_image stays the
+  default `/images/default-cover.png` — which 404s: the run ships no
+  src/public/images/ at all, so even the default cover is a broken link on every
+  book. Spec: "Each book has a cover image users can upload."
+- **AG-C2-02 — run-2 ships no interactive API docs (F18).** /swagger 404, no spec
+  route, no swagger decorators anywhere in src/. Spec: "Provide interactive
+  documentation for the API."
+- **MCP-usage evidence: nothing in-repo, either run.** Neither BLOG mentions MCP
+  or tina4_context; both plan/ dirs are empty. Whether run-1 discovered the tools
+  unprompted, and whether run-2 actually used tina4_context as directed (and
+  stayed off the codegen tools), is only visible in the Antigravity session
+  transcript — **open item, user-side check**.
+- **Version skew note:** run-1 pinned tina4-python **3.13.58**, run-2 **3.13.60**
+  (a-vanilla runs: 3.13.54–56). Each run graded against its own lockfile
+  (faithful); cross-run comparisons carry that skew — upstream released between
+  builds, inherent to time-separated runs.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
