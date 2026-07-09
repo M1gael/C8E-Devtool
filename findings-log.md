@@ -14,8 +14,8 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 |------|--------|-------|-------|-------|--------|
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
-| Antigravity v1.107.0 | B — +devkit | — | — | — | (pending) |
-| Antigravity v1.107.0 | C — +MCP | — | — | — | (pending) |
+| Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
+| Antigravity v1.107.0 | C — +MCP | ▶ setup done 2026-07-09, run pending | — | — | baselines/C-mcp/ |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -377,6 +377,24 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   the kind of thing a visible grader script would have flagged. Consistent with the
   sibling/grader-visibility inflation hypothesis (see HARNESS LESSON); one clean run
   proves nothing alone, but B/C runs under the same guard will accumulate the sample.
+
+### Config C (+MCP) setup (2026-07-09)
+
+- Config order: C runs before B at the user's choice (MCP portal token was at hand);
+  B (+devkit) deferred, not skipped.
+- `~/.gemini/config/mcp_config.json` (0 bytes at A-baseline) now registers
+  `tina4-coder` → `https://mcp.tina4.com/mcp`, Bearer token (portal, created
+  2026-07-06). Connection verified two ways: direct MCP `initialize` handshake from
+  the harness (200, serverInfo `tina4-coder`) and an in-Antigravity smoke test in a
+  throwaway conversation (agent listed all 7 tools; it answered by reading
+  Antigravity's manifest cache `~/.gemini/antigravity/mcp/tina4-coder/*.json`).
+- Baseline snapshot: `baselines/C-mcp/` = redacted `mcp_config.json` + the 7 cached
+  tool manifests (`tina4_code`, `tina4_context`, `tina4_review`, `tina4_chat`,
+  `tina4_features`, `tina4_bug`, `tina4_image`). Token verified absent.
+- Same protocol as A: v2.1 Lend prompt verbatim, `guard.py pack` isolation,
+  C ports 703N (run-1 = 7031). MCP availability is the ONLY intended delta vs A;
+  whether/how the agent CALLS the tools is the measurement, so the prompt still
+  says nothing about MCP or docs.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
