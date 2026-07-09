@@ -1,52 +1,56 @@
 """
-guard.py — zip away everything except the active run dir, restore after.
+guard.py — move everything except the active run dir out of the repo, restore after.
 
 Finding AG-A2-09: a run edited graders/grade_lend.py and self-graded, because
-runs live INSIDE this repo. The first version of this script curated a
-"sensitive paths" list — and missed tina4-book/, tools/ itself, README.md,
-.gitignore, .git. A hand-maintained allow-list of what to hide keeps missing
-things. Inverted: allow-list the ONE path the subject needs (the active run
-dir), zip literally everything else, including this script's own directory
-and .git.
+runs live INSIDE this repo. v1 zipped a curated list (missed things), v2 zipped
+everything (slow: compressing .git + a run's .venv took minutes). v3 MOVES the
+files instead — same-volume renames, near-instant, no compression — to a stash
+far outside the repo AND outside the projects tree entirely.
 
-  python tools/guard.py pack <run-rel-path>   # e.g. antigravity/a-vanilla/run-3
+  python tools/guard.py pack <run-rel-path>   # e.g. antigravity/c-mcp/run-1
   python tools/guard.py unpack                # after the run finishes + is captured
   python tools/guard.py status
 
-Because tools/ itself gets zipped away, pack() writes a standalone restore
-script next to the vault (outside the repo) — use THAT to unpack once this
-copy of guard.py no longer exists on disk.
+Because tools/ itself moves away, pack() writes a standalone restore.py next to
+the stash — use THAT to unpack while this copy of guard.py is stashed.
 
-Zip is verified (testzip + file count) before any original is deleted. pack()
-refuses to run on a dirty working tree — the commit made right before pack is
-the real backstop; the zip is just convenience.
+pack refuses on a dirty working tree (the commit right before pack is the
+backstop). Every move is recorded in a manifest; a failed pack rolls back the
+moves already made.
 """
-import os
+import json
 import shutil
-import stat
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-VAULT_DIR = REPO.parent / ".harness-guard"
-VAULT = VAULT_DIR / "guard.zip"
-MARKER = VAULT_DIR / "active_run.txt"
-STUB = VAULT_DIR / "unpack.py"
+# far outside the repo and outside Documents/projects entirely
+STASH_ROOT = Path.home() / ".harness-guard"
+STASH = STASH_ROOT / "stash"
+MANIFEST = STASH_ROOT / "manifest.json"
+RESTORE = STASH_ROOT / "restore.py"
 
-STUB_SRC = '''"""Standalone restore -- use when tools/guard.py has been zipped away.
+RESTORE_SRC = '''"""Standalone restore -- use while tools/guard.py is stashed away.
 Auto-written by guard.py pack(); do not edit."""
-import zipfile
+import json
+import shutil
 from pathlib import Path
 REPO = Path(r"%(repo)s")
-VAULT = Path(r"%(vault)s")
-with zipfile.ZipFile(VAULT) as z:
-    bad = z.testzip()
-    if bad:
-        raise SystemExit("zip corrupt (%%s)" %% bad)
-    z.extractall(REPO)
-    print("restored %%d files from %%s" %% (len(z.namelist()), VAULT))
+STASH = Path(r"%(stash)s")
+MANIFEST = Path(r"%(manifest)s")
+rels = json.loads(MANIFEST.read_text(encoding="utf-8"))["moved"]
+back = 0
+for rel in rels:
+    src, dst = STASH / rel, REPO / rel
+    if not src.exists():
+        raise SystemExit("MISSING in stash: %%s -- stopped after %%d restores" %% (rel, back))
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dst))
+    back += 1
+MANIFEST.unlink()
+shutil.rmtree(STASH, ignore_errors=True)
+print("restored %%d entries from %%s" %% (back, STASH))
 '''
 
 
@@ -71,88 +75,73 @@ def _keep_chain(keep_rel: str):
     return chain, rel_parts
 
 
-def _force_remove(func, path, exc_info):
-    # git objects are read-only on Windows; clear the bit and retry once
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-
-def _files(p: Path):
-    if p.is_file():
-        yield p
-    elif p.is_dir():
-        for f in p.rglob("*"):
-            if f.is_file():
-                yield f
-
-
 def pack(keep_rel: str):
-    if VAULT.exists():
-        sys.exit("vault already exists at %s — unpack first" % VAULT)
+    if MANIFEST.exists():
+        sys.exit("stash already active (%s) — unpack first" % MANIFEST)
     if not _git_clean():
         sys.exit("working tree not clean — commit first (that commit is the backstop)")
     chain, rel_parts = _keep_chain(keep_rel)
-    to_zip = []
+    to_move = []
     for depth, parent in enumerate(chain):
         keep_child = rel_parts[depth]
         for entry in sorted(parent.iterdir()):
             if entry.name == keep_child:
                 continue
-            to_zip.append(entry)
-    if not to_zip:
-        print("nothing to pack — is everything already packed away?")
+            to_move.append(entry)
+    if not to_move:
+        print("nothing to move — is everything already stashed?")
         return
-    VAULT_DIR.mkdir(parents=True, exist_ok=True)
-    n = 0
-    with zipfile.ZipFile(VAULT, "w", zipfile.ZIP_DEFLATED) as z:
-        for entry in to_zip:
-            for f in _files(entry):
-                z.write(f, f.relative_to(REPO).as_posix())
-                n += 1
-    with zipfile.ZipFile(VAULT) as z:  # verify BEFORE deleting anything
-        bad = z.testzip()
-        if bad:
-            VAULT.unlink()
-            sys.exit("zip verify FAILED (%s) — originals kept, vault discarded" % bad)
-        count = len(z.namelist())
-    if count < n:
-        VAULT.unlink()
-        sys.exit("zip short (%d < %d) — originals kept, vault discarded" % (count, n))
-    MARKER.write_text(keep_rel, encoding="utf-8")
-    STUB.write_text(STUB_SRC % {"repo": str(REPO), "vault": str(VAULT)}, encoding="utf-8")
-    for entry in to_zip:
-        if entry.is_dir():
-            shutil.rmtree(entry, onexc=_force_remove)
-        else:
-            try:
-                entry.unlink()
-            except PermissionError:
-                _force_remove(entry.unlink, entry, None)
-    print("packed %d files -> %s" % (count, VAULT))
+    STASH.mkdir(parents=True, exist_ok=True)
+    moved = []
+    try:
+        for entry in to_move:
+            rel = entry.relative_to(REPO).as_posix()
+            dst = STASH / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(entry), str(dst))
+            moved.append(rel)
+    except Exception as e:
+        for rel in reversed(moved):  # roll back what already moved
+            (REPO / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(STASH / rel), str(REPO / rel))
+        sys.exit("move FAILED (%s) — rolled %d entries back, repo unchanged" % (e, len(moved)))
+    # verify before declaring success
+    bad = [r for r in moved if not (STASH / r).exists() or (REPO / r).exists()]
+    if bad:
+        sys.exit("verify FAILED for: %s — inspect %s manually" % (bad, STASH))
+    MANIFEST.write_text(json.dumps({"kept": keep_rel, "moved": moved}, indent=1),
+                        encoding="utf-8")
+    RESTORE.write_text(RESTORE_SRC % {"repo": str(REPO), "stash": str(STASH),
+                                      "manifest": str(MANIFEST)}, encoding="utf-8")
+    print("moved %d top-level entries -> %s" % (len(moved), STASH))
     print("kept live: %s (only this is visible in the repo now)" % keep_rel)
-    print("tools/guard.py is zipped too — to restore later run:")
-    print("  python %s" % STUB)
+    print("tools/guard.py moved too — to restore run:")
+    print("  python %s" % RESTORE)
 
 
 def unpack():
-    if not VAULT.exists():
-        sys.exit("no vault at %s" % VAULT)
-    with zipfile.ZipFile(VAULT) as z:
-        bad = z.testzip()
-        if bad:
-            sys.exit("zip corrupt (%s)" % bad)
-        z.extractall(REPO)
-        count = len(z.namelist())
-    kept = MARKER.read_text(encoding="utf-8").strip() if MARKER.exists() else "?"
-    print("restored %d files from %s" % (count, VAULT))
-    print("was kept live during the run: %s" % kept)
-    print("verify `git status` clean, then delete %s when satisfied" % VAULT_DIR)
+    if not MANIFEST.exists():
+        sys.exit("no active stash manifest at %s" % MANIFEST)
+    rels = json.loads(MANIFEST.read_text(encoding="utf-8"))["moved"]
+    back = 0
+    for rel in rels:
+        src, dst = STASH / rel, REPO / rel
+        if not src.exists():
+            sys.exit("MISSING in stash: %s — stopped after %d restores" % (rel, back))
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(src), str(dst))
+        back += 1
+    MANIFEST.unlink()
+    shutil.rmtree(STASH, ignore_errors=True)
+    print("restored %d entries; verify `git status` clean" % back)
 
 
 def status():
-    print("vault: %s (%s)" % (VAULT, "exists" if VAULT.exists() else "none"))
-    if VAULT.exists() and MARKER.exists():
-        print("kept live during current pack: %s" % MARKER.read_text(encoding="utf-8").strip())
+    active = MANIFEST.exists()
+    print("stash: %s (%s)" % (STASH, "ACTIVE" if active else "none"))
+    if active:
+        m = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        print("kept live: %s | stashed entries: %d" % (m["kept"], len(m["moved"])))
     top = sorted(p.name for p in REPO.iterdir())
     print("currently in repo root (%d): %s" % (len(top), ", ".join(top)))
 
