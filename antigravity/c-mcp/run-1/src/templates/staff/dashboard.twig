@@ -1,0 +1,70 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="margin-top: 2rem; margin-bottom: 2rem;">
+    <h1>{{ translate("staff_dashboard", lang) }}</h1>
+    <p style="color:#64748b">{{ translate("welcome_back", lang, username=staff.username) }}</p>
+</div>
+
+<!-- Metrics Overview -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 3rem">
+    <div class="premium-card" style="margin-bottom:0">
+        <div class="card-body" style="text-align: center">
+            <h4 style="color:#64748b; margin-bottom: 0.5rem">Total Books</h4>
+            <h1 style="font-size: 2.5rem; color:#4f46e5; margin: 0">{{ metrics.total_books | default(0) }}</h1>
+        </div>
+    </div>
+    <div class="premium-card" style="margin-bottom:0">
+        <div class="card-body" style="text-align: center">
+            <h4 style="color:#64748b; margin-bottom: 0.5rem">Total Members</h4>
+            <h1 style="font-size: 2.5rem; color:#10b981; margin: 0">{{ metrics.total_members | default(0) }}</h1>
+        </div>
+    </div>
+    <div class="premium-card" style="margin-bottom:0">
+        <div class="card-body" style="text-align: center">
+            <h4 style="color:#64748b; margin-bottom: 0.5rem">Active Loans</h4>
+            <h1 style="font-size: 2.5rem; color:#ef4444; margin: 0">{{ metrics.active_loans | default(0) }}</h1>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem">
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>{{ translate("manage_books", lang) }}</h3>
+        </div>
+        <div class="card-body">
+            <p style="color:#64748b; margin-bottom: 1.5rem">Add, edit, or remove books in the catalogue.</p>
+            <a href="/staff/books" class="btn btn-primary" style="display:block">{{ translate("manage_books", lang) }} &rarr;</a>
+        </div>
+    </div>
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>{{ translate("manage_members", lang) }}</h3>
+        </div>
+        <div class="card-body">
+            <p style="color:#64748b; margin-bottom: 1.5rem">Register and manage library members.</p>
+            <a href="/staff/members" class="btn btn-primary" style="display:block">{{ translate("manage_members", lang) }} &rarr;</a>
+        </div>
+    </div>
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>{{ translate("manage_loans", lang) }}</h3>
+        </div>
+        <div class="card-body">
+            <p style="color:#64748b; margin-bottom: 1.5rem">Check out books to members and record returns.</p>
+            <a href="/staff/loans" class="btn btn-primary" style="display:block">{{ translate("manage_loans", lang) }} &rarr;</a>
+        </div>
+    </div>
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>{{ translate("audit_trail", lang) }}</h3>
+        </div>
+        <div class="card-body">
+            <p style="color:#64748b; margin-bottom: 1.5rem">Review the history of catalogue updates and staff actions.</p>
+            <a href="/staff/audit" class="btn btn-primary" style="display:block">{{ translate("audit", lang) }} &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

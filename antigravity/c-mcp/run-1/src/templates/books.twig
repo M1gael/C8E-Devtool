@@ -1,0 +1,68 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div class="hero-section">
+    <h1>{{ translate("app_name", lang) }}</h1>
+    <p>{{ translate("tagline", lang) }}</p>
+</div>
+
+<div class="premium-card">
+    <div class="card-body">
+        <form method="GET" action="/" class="d-flex gap-2" style="display:flex; gap:1rem">
+            <input type="text" name="search" class="form-control" placeholder="{{ translate('search_placeholder', lang) }}" value="{{ search_query }}" style="flex:1">
+            <button type="submit" class="btn btn-primary">{{ translate("search", lang) }}</button>
+            {% if search_query %}
+                <a href="/" class="btn btn-secondary">{{ translate("all_books", lang) }}</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="book-grid">
+    {% for book in books %}
+        <div class="premium-card book-card">
+            <div class="cover-wrapper">
+                <img src="{{ book.cover_image | default('/images/default-cover.jpg') }}" alt="{{ book.title }}">
+                {% if book.is_available %}
+                    <span class="status-badge available">{{ translate("available", lang) }}</span>
+                {% else %}
+                    <span class="status-badge borrowed">{{ translate("borrowed", lang) }}</span>
+                {% endif %}
+            </div>
+            <div class="book-info">
+                <a href="/books/{{ book.id }}" class="book-title">{{ book.title }}</a>
+                <div class="book-author">by {{ book.author }}</div>
+                <div class="book-meta">
+                    <span>{{ book.published_year }}</span>
+                    <span>ISBN: {{ book.isbn }}</span>
+                </div>
+                <div style="margin-top: 1rem">
+                    <a href="/books/{{ book.id }}" class="btn btn-secondary" style="display:block">{{ translate("details", lang) }}</a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <h3>{{ translate("no_books", lang) }}</h3>
+        </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination-controls">
+    {% if current_page > 1 %}
+        <a href="/?search={{ search_query | url_encode }}&page={{ current_page - 1 }}" class="page-link">&laquo; Prev</a>
+    {% endif %}
+    
+    {% for p in 1..total_pages %}
+        {% if p >= current_page - 2 and p <= current_page + 2 %}
+            <a href="/?search={{ search_query | url_encode }}&page={{ p }}" class="page-link {% if p == current_page %}active{% endif %}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+    
+    {% if current_page < total_pages %}
+        <a href="/?search={{ search_query | url_encode }}&page={{ current_page + 1 }}" class="page-link">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

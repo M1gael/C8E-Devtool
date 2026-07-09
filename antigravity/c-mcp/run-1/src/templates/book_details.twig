@@ -1,0 +1,83 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+    <a href="/" class="btn btn-secondary">&larr; {{ translate("back_to_catalog", lang) }}</a>
+</div>
+
+<div class="premium-card">
+    <div class="card-header">
+        <h2>{{ translate("book_details", lang) }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="detail-layout">
+            <div class="detail-cover">
+                <img src="{{ book.cover_image | default('/images/default-cover.jpg') }}" alt="{{ book.title }}">
+            </div>
+            <div>
+                <h1 style="margin-top: 0">{{ book.title }}</h1>
+                <h3 style="color:#6366f1; margin-top:0">by {{ book.author }}</h3>
+                
+                <table class="premium-table" style="margin-bottom: 2rem">
+                    <tr>
+                        <th style="width: 200px">{{ translate("year", lang) }}</th>
+                        <td>{{ book.published_year }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ translate("isbn", lang) }}</th>
+                        <td>{{ book.isbn }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ translate("status", lang) }}</th>
+                        <td>
+                            {% if book.is_available %}
+                                <span class="status-badge available" style="position:static; display:inline-block">{{ translate("available", lang) }}</span>
+                            {% else %}
+                                <span class="status-badge borrowed" style="position:static; display:inline-block">{{ translate("borrowed", lang) }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="premium-card">
+    <div class="card-header">
+        <h3>{{ translate("borrow_history", lang) }}</h3>
+    </div>
+    <div class="card-body" style="overflow-x:auto">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>{{ translate("member", lang) }}</th>
+                    <th>{{ translate("borrow_date", lang) }}</th>
+                    <th>{{ translate("due_date", lang) }}</th>
+                    <th>{{ translate("returned_date", lang) }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                    <tr>
+                        <td><strong>{{ loan.member_name }}</strong> ({{ loan.member_email }})</td>
+                        <td>{{ loan.borrow_date }}</td>
+                        <td>{{ loan.due_date }}</td>
+                        <td>
+                            {% if loan.returned_date %}
+                                <span style="color:#059669">{{ loan.returned_date }}</span>
+                            {% else %}
+                                <span class="status-badge borrowed" style="position:static; display:inline-block; font-size:0.75rem; padding:0.2rem 0.6rem">{{ translate("active_loan", lang) }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding: 2rem; color: #64748b">No borrowing history.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

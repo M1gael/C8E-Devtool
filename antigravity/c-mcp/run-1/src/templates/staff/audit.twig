@@ -1,0 +1,51 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="margin-top: 2rem; margin-bottom: 2rem;">
+    <a href="/staff/dashboard" class="btn btn-secondary">&larr; {{ translate("staff_dashboard", lang) }}</a>
+</div>
+
+<div class="premium-card">
+    <div class="card-header">
+        <h3>{{ translate("audit_trail", lang) }}</h3>
+    </div>
+    <div class="card-body" style="overflow-x:auto">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>{{ translate("timestamp", lang) }}</th>
+                    <th>Staff Member</th>
+                    <th>{{ translate("action", lang) }}</th>
+                    <th>Target</th>
+                    <th>{{ translate("description", lang) }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td style="white-space:nowrap; font-size:0.9rem; color:#64748b">{{ log.created_at }}</td>
+                        <td><strong>{{ log.username }}</strong></td>
+                        <td>
+                            <span class="badge" style="background:#e2e8f0; color:#334155; padding:0.3rem 0.6rem; border-radius:4px; font-weight:600; font-size:0.75rem">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td style="font-size:0.9rem; color:#64748b">
+                            {% if log.target_type %}
+                                {{ log.target_type }} (ID: {{ log.target_id }})
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ log.description }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding: 2rem; color: #64748b">No audit logs available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

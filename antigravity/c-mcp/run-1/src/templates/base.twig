@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('en') }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{{ translate("app_name", lang) }} - {{ translate("tagline", lang) }}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/default.css">
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    {% block nav %}
+        {% include "partials/nav.twig" %}
+    {% endblock %}
+
+    <main class="main-container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="lend-footer">
+        <p>&copy; 2026 {{ translate("app_name", lang) }}. {{ translate("tagline", lang) }}.</p>
+    </footer>
+
+    {% block javascripts %}
+    <script src="/js/tina4.min.js"></script>
+    <script src="/js/frond.min.js"></script>
+    {% endblock %}
+</body>
+</html>

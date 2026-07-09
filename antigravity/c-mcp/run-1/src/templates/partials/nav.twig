@@ -1,0 +1,28 @@
+<nav class="lend-nav">
+    <a href="/" class="logo">
+        <svg style="width:28px;height:28px;fill:currentColor" viewBox="0 0 24 24">
+            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5.89 12.5L12 15.82l6.11-3.32L12 9.18 5.89 12.5zM12 18c-3.1 0-6-1.1-6-2.5V18c0 1.4 2.9 2.5 6 2.5s6-1.1 6-2.5v-2.5c0 1.4-2.9 2.5-6 2.5z"/>
+        </svg>
+        <span>{{ translate("app_name", lang) }}</span>
+    </a>
+    
+    <div class="nav-links">
+        <a href="/">{{ translate("books", lang) }}</a>
+        
+        {% if staff %}
+            <a href="/staff/dashboard">{{ translate("staff_dashboard", lang) }}</a>
+            <a href="/staff/books">{{ translate("manage_books", lang) }}</a>
+            <a href="/staff/members">{{ translate("members", lang) }}</a>
+            <a href="/staff/loans">{{ translate("loans", lang) }}</a>
+            <a href="/staff/audit">{{ translate("audit", lang) }}</a>
+            <a href="/logout" class="btn btn-secondary" style="padding: 0.4rem 1rem; color: #1e293b">{{ translate("logout", lang) }}</a>
+        {% else %}
+            <a href="/login" class="btn btn-secondary" style="padding: 0.4rem 1rem; color: #1e293b">{{ translate("login", lang) }}</a>
+        {% endif %}
+        
+        <div style="display: flex; gap: 0.5rem; margin-left: 1rem; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 1rem;">
+            <a href="/lang/en" style="font-size: 0.9rem; {% if lang == 'en' %}font-weight: bold; text-decoration: underline;{% endif %}">EN</a>
+            <a href="/lang/es" style="font-size: 0.9rem; {% if lang == 'es' %}font-weight: bold; text-decoration: underline;{% endif %}">ES</a>
+        </div>
+    </div>
+</nav>

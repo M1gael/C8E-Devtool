@@ -1,0 +1,107 @@
+{% extends "base.twig" %}
+
+{% block content %}
+<div style="margin-top: 2rem; margin-bottom: 2rem;">
+    <a href="/staff/dashboard" class="btn btn-secondary">&larr; {{ translate("staff_dashboard", lang) }}</a>
+</div>
+
+{% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+{% endif %}
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start; margin-top: 2rem">
+    <!-- Active Loans List -->
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>Active & Historical Loans</h3>
+        </div>
+        <div class="card-body" style="overflow-x:auto">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Member</th>
+                        <th>Borrowed</th>
+                        <th>Due Date</th>
+                        <th>Returned</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                        <tr>
+                            <td><strong>{{ loan.book_title }}</strong></td>
+                            <td>{{ loan.member_name }}<br><span style="font-size:0.85rem; color:#64748b">{{ loan.member_email }}</span></td>
+                            <td>{{ loan.borrow_date }}</td>
+                            <td>{{ loan.due_date }}</td>
+                            <td>
+                                {% if loan.returned_date %}
+                                    <span style="color:#059669">{{ loan.returned_date }}</span>
+                                {% else %}
+                                    <span class="status-badge borrowed" style="position:static; display:inline-block; font-size:0.75rem; padding:0.2rem 0.6rem">{{ translate("active_loan", lang) }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not loan.returned_date %}
+                                    <form method="POST" action="/staff/loans/return/{{ loan.id }}">
+                                        {{ form_token() }}
+                                        <button type="submit" class="btn btn-success" style="padding: 0.4rem 0.8rem; font-size: 0.85rem">{{ translate("return_book", lang) }}</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding: 2rem; color: #64748b">No loans recorded.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Form: Record a Loan -->
+    <div class="premium-card">
+        <div class="card-header">
+            <h3>{{ translate("record_loan", lang) }}</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/staff/loans/add">
+                {{ form_token() }}
+                
+                <div class="form-group">
+                    <label for="book_id">Select Book</label>
+                    <select id="book_id" name="book_id" class="form-control" required>
+                        <option value="" disabled selected>Choose a book...</option>
+                        {% for book in available_books %}
+                            <option value="{{ book.id }}">{{ book.title }} by {{ book.author }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="member_id">Select Member</label>
+                    <select id="member_id" name="member_id" class="form-control" required>
+                        <option value="" disabled selected>Choose a member...</option>
+                        {% for member in members %}
+                            <option value="{{ member.id }}">{{ member.name }} ({{ member.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="due_date">Due Date</label>
+                    <input type="date" id="due_date" name="due_date" class="form-control" placeholder="Select due date" value="{{ default_due_date }}" required>
+                </div>
+                
+                <div style="margin-top: 1.5rem">
+                    <button type="submit" class="btn btn-primary" style="width:100%">{{ translate("record_loan", lang) }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
