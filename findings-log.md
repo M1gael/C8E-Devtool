@@ -13,7 +13,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Tool | Config | Run 1 | Run 2 | Run 3 | Ledger |
 |------|--------|-------|-------|-------|--------|
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
-| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ▶ 3rd attempt built under `guard.py` isolation, ungraded (2nd attempt tampered, rolled back + archived) | a-vanilla/ · results-v2.json per run |
+| Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending) |
 | Antigravity v1.107.0 | C — +MCP | — | — | — | (pending) |
 
@@ -343,7 +343,40 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   excludes `.venv/`, `data/`, `logs/`, `secrets/`, `.env` — `.env`'s real
   `TINA4_SECRET` will not get committed. Two loose ends checked and cleared:
   `data/.broken` is an empty, unreferenced directory (harmless); `secrets/` is empty.
-  Not yet graded.
+- **GRADED (2026-07-09): run-3 = 16/30** (F 5/16 · P 2/4 · T 1/1 · S 7/7),
+  `results-v2.json`, tina4-python 3.13.56, port 7513→grading copy :7513. Grader change
+  for this run (open, logged): run-3 is the first run to SPLIT public reads from staff
+  writes (`GET /api/catalogue` vs `POST /api/books`), so the adapter schema gained an
+  optional `books_read` key used by the three read-site checks (F3/F8/F9); runs 1–2
+  fall back to `books` — their scores unaffected. No check logic changed.
+- **AG-A2-11 — staff login 500s: ORM `load()` misused with full SQL (untested
+  front door).** `POST /api/auth/login` deterministically returns 500:
+  `AttributeError: 'str' object has no attribute '_get_db'`. Cause (in the run's own
+  code, `src/routes/auth.py`): `User.load("SELECT * FROM users WHERE email = ?",
+  [email])` — tina4's ORM `load()` takes a filter clause (`load("email = ?",
+  [email])`), not a full SELECT; the framework's debug overlay itself documents the
+  filter syntax. Reproduced independently of the grader on an isolated copy
+  (fresh data/, migrations+seed ran fine, `/` 200, login 500 — deterministic).
+  Sentinel both sides: seeded user EXISTS (migration inserts `staff@library.com`,
+  pbkdf2 hash, plaintext documented in BLOG.md) — the failure is the query, not the
+  seed. **Why its own suite is green anyway:** `tests/test_library.py` never calls
+  the login route — `setUp()` mints a token directly via `Auth.get_token(...)` and
+  calls route functions in-process with that header. The only auth-related test
+  (`test_02`) checks the 401 guard, not sign-in. So T1 passes while the app's front
+  door is broken. Consequence: F4 fails → F6/F7/F8/F9/F10/F11/F12/F13/F14/F17/P2/P4
+  all cascade (staff can't act) → 16/30. F15 (upload) fails on its own merits, same
+  as both siblings. Found on tina4-python 3.13.56 / CLI 3.8.53.
+- **First-ever green on F16:** run-3 serves real Spanish (`?lang=es` + session,
+  5 locale strings verified present-in-ES/absent-in-EN) — the check both siblings
+  failed. Also S-tier 7/7 (first run to hash the seeded password AND gitignore its
+  secret-bearing `.env` correctly).
+- **Isolation-effect observation (hedged, n=1):** the first run graded with the
+  harness packed away (no grader, no spec grading map, no scored siblings visible)
+  is also the first run to ship a hard functional failure on a core path, scoring
+  16/30 vs the sibling-visible 27–28/30 — and its miss (broken login) is precisely
+  the kind of thing a visible grader script would have flagged. Consistent with the
+  sibling/grader-visibility inflation hypothesis (see HARNESS LESSON); one clean run
+  proves nothing alone, but B/C runs under the same guard will accumulate the sample.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 

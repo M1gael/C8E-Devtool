@@ -75,6 +75,26 @@ ADAPTERS = {
         "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
         "staff_names": ["Librarian", "staff@library.com"],
     },
+    # run-3 (3rd attempt, built 2026-07-09 under guard.py isolation). Discovered by
+    # reading src/routes: public reads live on /api/catalogue, staff writes on
+    # /api/books — first run to split them, hence the books_read key (read-site
+    # fallback added for it; other runs unaffected). Creds seeded by migration,
+    # documented in its BLOG.md. Lang switch is a ?lang= query param + session.
+    "run-3": {
+        "login": ("/api/auth/login", {"email": "staff@library.com", "password": "password123"}),
+        "books": "/api/books",
+        "books_read": "/api/catalogue",
+        "book": "/api/books/{id}",
+        "members": "/api/members",
+        "loans": "/api/loans",
+        "loan_return": lambda loan_id, book_id: ("/api/loans/%s/return" % loan_id, {}),
+        "audit": "/api/audit-logs",
+        "search_param": "q", "page_param": "page", "limit_param": "limit",
+        "loan_body": lambda bid, mid: {"book_id": bid, "member_id": mid, "due_date": "2026-08-01"},
+        "lang_setup": None, "lang_page": "/?lang=es", "locale_file": "src/locales/es.json",
+        "mail_globs": ["data/queue/**/*", "data/mailbox/**/*"],
+        "staff_names": ["Library Staff", "staff@library.com"],
+    },
 }
 
 # ---------------------------------------------------------------- helpers
@@ -224,8 +244,12 @@ class Grader:
         self.check("F2", "website serves a home page",
                    "Lend must work both as a website and as a JSON API.", f2)
 
+        # read-site endpoint: runs may split public reads from staff writes
+        # (run-3: GET /api/catalogue vs POST /api/books); default = same path
+        books_read = a.get("books_read", a["books"])
+
         def f3():
-            st, tx = req2("GET", self.url(a["books"]))
+            st, tx = req2("GET", self.url(books_read))
             j = jload(tx)
             return st == 200 and j is not None, "status %s" % st
         self.check("F3", "public JSON catalogue, no auth",
@@ -286,11 +310,11 @@ class Grader:
                  {"title": "GRADERBOOK-Quiet Garden", "author": "Boris Yellnikov",
                   "published_year": 2001, "isbn": "978-0-22-222222-2", "cover_image": ""},
                  token=self.token)
-            st, tx = req2("GET", self.url(a["books"]) + "?%s=Zebra" % a["search_param"])
+            st, tx = req2("GET", self.url(books_read) + "?%s=Zebra" % a["search_param"])
             hit_title = "GRADERBOOK-Alpha Zebra" in tx and "Quiet Garden" not in tx
-            st2, tx2 = req2("GET", self.url(a["books"]) + "?%s=Yellnikov" % a["search_param"])
+            st2, tx2 = req2("GET", self.url(books_read) + "?%s=Yellnikov" % a["search_param"])
             hit_author = "GRADERBOOK-Quiet Garden" in tx2
-            st3, tx3 = req2("GET", self.url(a["books"]) + "?%s=1984" % a["search_param"])
+            st3, tx3 = req2("GET", self.url(books_read) + "?%s=1984" % a["search_param"])
             hit_year = "GRADERBOOK-Alpha Zebra" in tx3
             note = "title:%s author:%s year:%s" % (hit_title, hit_author, hit_year)
             return hit_title and hit_author and hit_year, note
@@ -304,8 +328,8 @@ class Grader:
                       "published_year": 1990, "isbn": "978-1-00-%06d-0" % i, "cover_image": ""},
                      token=self.token)
             q = "?%s=Bulk&%s=10&%s=" % (a["search_param"], a["limit_param"], a["page_param"])
-            st1, p1 = req2("GET", self.url(a["books"]) + q + "1")
-            st2, p2 = req2("GET", self.url(a["books"]) + q + "2")
+            st1, p1 = req2("GET", self.url(books_read) + q + "1")
+            st2, p2 = req2("GET", self.url(books_read) + q + "2")
             ids1 = set(re.findall(r"GRADERBOOK-Bulk \d+", p1))
             ids2 = set(re.findall(r"GRADERBOOK-Bulk \d+", p2))
             ok = st1 == st2 == 200 and ids1 and ids2 and ids1 != ids2 and len(ids1) <= 10
