@@ -477,11 +477,22 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 - **AG-C2-02 — run-2 ships no interactive API docs (F18).** /swagger 404, no spec
   route, no swagger decorators anywhere in src/. Spec: "Provide interactive
   documentation for the API."
-- **MCP-usage evidence: nothing in-repo, either run.** Neither BLOG mentions MCP
-  or tina4_context; both plan/ dirs are empty. Whether run-1 discovered the tools
-  unprompted, and whether run-2 actually used tina4_context as directed (and
-  stayed off the codegen tools), is only visible in the Antigravity session
-  transcript — **open item, user-side check**.
+- **MCP-usage ground truth RESOLVED (2026-07-09 late) — from Antigravity brain
+  transcripts** (`~/.gemini/antigravity/brain/<id>/.system_generated/logs/
+  transcript_full.jsonl`; full extract in `baselines/C-mcp/mcp-usage-evidence.md`).
+  In-repo artifacts are silent either way (BLOGs never mention MCP, plan/ dirs
+  empty) — transcripts are the only measurement surface.
+  **run-1 (bare): 0 `call_mcp_tool` invocations.** Seven tools connected and
+  listed; the agent never discovered or reached for any — the 29/30 build is
+  pure prior model knowledge. Headline: undirected MCP = unused MCP.
+  **run-2 (directed): 14 calls, all `tina4_context`, zero codegen tools** —
+  v2.2-C directive complied with in full. Retrieval-quality friction inside
+  those calls: queue imports queried 3× and template rendering 3× (agent's own
+  labels: "again", "third attempt") before the run hand-rolled its own
+  `render()` helper instead of a framework call; one mid-run oddity where the
+  agent addressed the operator ("Please trigger the `tina4_context` tool if
+  you have specific snippets..."). A third session with 11 calls is the user's
+  other-AI accident session (retracted AG-C1-01) — excluded from eval data.
 - **Version skew note:** run-1 pinned tina4-python **3.13.58**, run-2 **3.13.60**
   (a-vanilla runs: 3.13.54–56). Each run graded against its own lockfile
   (faithful); cross-run comparisons carry that skew — upstream released between
