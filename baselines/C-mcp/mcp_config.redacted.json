@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tina4-coder": {
+      "serverUrl": "https://mcp.tina4.com/mcp",
+      "headers": { "Authorization": "Bearer t4_<REDACTED>" }
+    }
+  }
+}

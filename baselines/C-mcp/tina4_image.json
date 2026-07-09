@@ -1,0 +1,1 @@
+{"name":"tina4_image","description":"Generate an image with the Tina4 diffusion model (sdxl-turbo) — UI mockups, icons, assets. Returns a base64 PNG (data in b64_json).","parameters":{"properties":{"prompt":{"type":"string"},"size":{"default":"512x512","type":"string"}},"required":["prompt"],"type":"object"}}

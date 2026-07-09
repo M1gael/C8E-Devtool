@@ -1,0 +1,1 @@
+{"name":"tina4_features","description":"List the Tina4 capabilities this coder supports — every category, feature, and its canonical API/idiom. Metadata only (no generation, no quota). Pass `category` (e.g. 'orm', 'auth', 'deploy') to filter.","parameters":{"properties":{"category":{"default":"","type":"string"}},"type":"object"}}
