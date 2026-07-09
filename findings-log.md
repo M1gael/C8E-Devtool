@@ -15,7 +15,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
-| Antigravity v1.107.0 | C — +MCP | ▶ setup done 2026-07-09, run pending | — | — | baselines/C-mcp/ |
+| Antigravity v1.107.0 | C — +MCP | ▶ built 2026-07-09, guard.py-isolated; ungraded (timing + MCP-usage TBD) | — | — | baselines/C-mcp/ |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -395,6 +395,20 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   C ports 703N (run-1 = 7031). MCP availability is the ONLY intended delta vs A;
   whether/how the agent CALLS the tools is the measurement, so the prompt still
   says nothing about MCP or docs.
+- **guard.py v3 (move, not zip).** Zipping everything (.git + a run's .venv)
+  timed out at 2min. v3 MOVES top-level entries to `~/.harness-guard/stash`
+  (outside the projects tree entirely, per user direction — "move the files far
+  out of even the git dir root"), same-volume renames, near-instant. Manifest +
+  standalone restore.py; commit-before-pack is the backstop. First exercised for
+  c-mcp/run-1: 14 entries moved out, repo showed only `antigravity/c-mcp/run-1`;
+  restored 14/14 clean (git fsck ok) after the run.
+- **c-mcp run-1 built + committed (caef892), ungraded.** Python, on-pin
+  (pyproject + uv.lock). Left root-level runtime residue (`test.db-shm/wal`,
+  `receipts.log`) outside its own gitignore's `data/`+`logs/` — excluded from the
+  frozen commit (source only); minor cleanliness note, not scored. `.env.local`
+  present but covered by the repo-root gitignore. Timing/burn, MCP-tool-usage
+  evidence, and the grade are TBD (deferred to grade the whole C config together;
+  user moved straight to run-2 to use the live Gemini session).
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 
