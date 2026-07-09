@@ -1,0 +1,33 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("login.title") }}{% endblock %}
+
+{% block content %}
+  <div class="login-card">
+    <h2>{{ t("login.title") }}</h2>
+
+    {% if error %}
+      <div class="alert alert-danger">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form action="/login" method="POST">
+      {{ form_token() }}
+      
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="{{ t("login.email_placeholder") }}">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="{{ t("login.password_placeholder") }}">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+        {{ t("login.submit") }}
+      </button>
+    </form>
+  </div>
+{% endblock %}

@@ -5,6 +5,14 @@
 > organically chose Python; run-3 rerun + configs B/C use v2.1. Naming a language is a
 > platform constraint like the port, not a framework lead.
 
+> **v2.2-C (2026-07-09, config-C runs 2–3 only, user decision):** adds one "Framework
+> knowledge" block (below, marked) directing the agent to source framework knowledge
+> ONLY via the MCP `tina4_context` retrieval tool and to write all application code
+> itself (no tina4_code/tina4_review/tina4_chat codegen). Comparability: C run-1 ran
+> BARE v2.1 (measures undirected MCP discovery); C runs 2–3 measure directed
+> retrieval-grounded building. Deliberate intra-C split — label the two sub-modes in
+> all comparisons. Configs A/B unaffected.
+
 Supersedes `query-spec.md` (v1) for the redo. v1 saturated: a plain single-entity
 CRUD app let a capable model score 9/9·6/6 in every run, and most of the output was
 `tina4 init` scaffold — so the task barely tested the tool. v2 is a richer, coherent
@@ -91,6 +99,12 @@ Lend must work both as a website and as a JSON API, and it must be production-re
   other language.
 - Include an automated test suite that proves the behaviour described above.
 - Provide interactive documentation for the API.
+
+**Framework knowledge** *(v2.2-C block — include ONLY for config-C runs 2–3; omit everywhere else)*
+- When you need Tina4 framework knowledge, obtain it only through the connected
+  Tina4 MCP server's context tool (`tina4_context`). Do not use that server's
+  code-generation, review, or chat tools to produce the application — write all
+  the application code yourself.
 
 **Running it**
 - It must run under `tina4 serve` on port {PORT}.

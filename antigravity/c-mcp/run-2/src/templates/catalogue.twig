@@ -1,0 +1,70 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ t("catalogue.title") }}{% endblock %}
+
+{% block content %}
+  <div class="hero">
+    <h1>{{ t("catalogue.title") }}</h1>
+    <p>Browse, search, and borrow books from our community library collection.</p>
+  </div>
+
+  <!-- Search Bar -->
+  <form action="/" method="GET" class="search-form">
+    <div class="input-wrapper">
+      <label for="search" class="sr-only" style="display: none;">{{ t("catalogue.search_placeholder") }}</label>
+      <input type="text" id="search" name="search" value="{{ search }}" placeholder="{{ t("catalogue.search_placeholder") }}">
+    </div>
+    <button type="submit" class="btn btn-primary">{{ t("catalogue.search_btn") }}</button>
+  </form>
+
+  <!-- Books Grid -->
+  {% if books|length > 0 %}
+    <div class="grid">
+      {% for book in books %}
+        <div class="card">
+          <div class="cover-container">
+            <span class="badge {% if book.is_available == 1 %}badge-available{% else %}badge-borrowed{% endif %}">
+              {% if book.is_available == 1 %}{{ t("book.available") }}{% else %}{{ t("book.borrowed") }}{% endif %}
+            </span>
+            <img src="{{ book.cover_image|default('/images/default-cover.png') }}" alt="{{ book.title }} Cover">
+          </div>
+          <div class="card-body">
+            <h3>{{ book.title }}</h3>
+            <p class="author">{{ book.author }}</p>
+            <div class="meta">
+              <span>{{ t("book.year") }}: {{ book.published_year }}</span>
+              <a href="/book/{{ book.id }}" class="btn btn-secondary btn-sm">{{ t("book.details") }}</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+      <div class="pagination">
+        {% if pagination.offset > 0 %}
+          <a href="?search={{ search }}&offset={{ pagination.prev_offset }}&lang={{ lang }}">&laquo; Prev</a>
+        {% endif %}
+        
+        {% for p in 1..pagination.pages %}
+          {% set p_offset = (p - 1) * pagination.limit %}
+          {% if p_offset == pagination.offset %}
+            <span class="active">{{ p }}</span>
+          {% else %}
+            <a href="?search={{ search }}&offset={{ p_offset }}&lang={{ lang }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if pagination.offset + pagination.limit < pagination.total %}
+          <a href="?search={{ search }}&offset={{ pagination.next_offset }}&lang={{ lang }}">Next &raquo;</a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="alert alert-danger" style="text-align: center; justify-content: center;">
+      {{ t("catalogue.no_books") }}
+    </div>
+  {% endif %}
+{% endblock %}

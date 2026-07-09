@@ -1,0 +1,113 @@
+{% extends "base.twig" %}
+
+{% block title %}Loans & Returns - Admin{% endblock %}
+
+{% block content %}
+  <div class="admin-header">
+    <div>
+      <h1>Library Administration</h1>
+      <p style="color: #9ca3af;">Record new loans and manage returns.</p>
+    </div>
+  </div>
+
+  <!-- Admin Navigation Tabs -->
+  <div class="admin-tabs">
+    <a href="/admin">Overview</a>
+    <a href="/admin/books">Books</a>
+    <a href="/admin/members">Members</a>
+    <a href="/admin/loans" class="active">Loans & Returns</a>
+    <a href="/admin/logs">Audit Logs</a>
+  </div>
+
+  {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+  {% endif %}
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="grid" style="grid-template-columns: 350px 1fr; align-items: start;">
+    <!-- Record Loan Form -->
+    <div class="card" style="padding: 1.5rem;">
+      <h3>Record Book Loan</h3>
+      
+      <form action="/admin/loans/add" method="POST" style="margin-top: 1rem;">
+        {{ form_token() }}
+        
+        <div class="form-group">
+          <label for="book_id">Select Book</label>
+          <select id="book_id" name="book_id" required>
+            <option value="" disabled selected>-- Select an Available Book --</option>
+            {% for book in available_books %}
+              <option value="{{ book.id }}" {% if selected_book_id == book.id %}selected{% endif %}>
+                {{ book.title }} (by {{ book.author }})
+              </option>
+            {% else %}
+              <option value="" disabled>No books currently available</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="member_id">Select Member</label>
+          <select id="member_id" name="member_id" required>
+            <option value="" disabled selected>-- Select Member --</option>
+            {% for member in members %}
+              <option value="{{ member.id }}">{{ member.name }} ({{ member.email }})</option>
+            {% else %}
+              <option value="" disabled>No registered members</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="due_date">Due Date</label>
+          <input type="date" id="due_date" name="due_date" required placeholder="YYYY-MM-DD">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" {% if available_books|length == 0 or members|length == 0 %}disabled{% endif %}>
+          Record Loan
+        </button>
+      </form>
+    </div>
+
+    <!-- Active Loans Table -->
+    <div class="history-section">
+      <h3 style="margin-bottom: 1rem;">Active Book Loans</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Member</th>
+              <th>Borrow Date</th>
+              <th>Due Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td><strong>{{ loan.book.title }}</strong><br><span style="font-size: 0.8rem; color: #9ca3af;">by {{ loan.book.author }}</span></td>
+                <td>{{ loan.member.name }}<br><span style="font-size: 0.8rem; color: #9ca3af;">{{ loan.member.email }}</span></td>
+                <td>{{ loan.borrow_date }}</td>
+                <td>{{ loan.due_date }}</td>
+                <td>
+                  <form action="/admin/loans/return" method="POST" style="display:inline;">
+                    {{ form_token() }}
+                    <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                    <button type="submit" class="btn btn-success btn-sm">Record Return</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: #9ca3af; font-style: italic;">No active loans at this time.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

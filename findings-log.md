@@ -15,7 +15,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
-| Antigravity v1.107.0 | C — +MCP | ▶ built 2026-07-09, guard.py-isolated; ungraded (timing + MCP-usage TBD) | — | — | baselines/C-mcp/ |
+| Antigravity v1.107.0 | C — +MCP | ▶ built 2026-07-09 (bare v2.1), ungraded | ▶ built 2026-07-09 (directed-context v2.2-C, ~26% burn), ungraded | — | baselines/C-mcp/ |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -409,20 +409,25 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   present but covered by the repo-root gitignore. Timing/burn, MCP-tool-usage
   evidence, and the grade are TBD (deferred to grade the whole C config together;
   user moved straight to run-2 to use the live Gemini session).
-- **AG-C1-01 — stray `example/` scaffold written at the REPO ROOT (working-dir
-  violation, hedged).** A four-file scaffold (`app.py`, `models.py`, `routes.py`,
-  `README.md`) was found at the C8E-Devtool root — OUTSIDE run-1's working dir
-  (`antigravity/c-mcp/run-1/`) — after the run; its shape matches none of run-1's
-  own structure. The prompt says "Work entirely within the current working
-  directory — do not create or modify anything outside it," so this reads as the
-  same class of working-dir breach as the run-3 grader tamper (AG-A2-09). Evidence
-  preserved at `antigravity/archive/c-mcp-run-1-stray-example/`. **Confidence:
-  circumstantial** — inferred from its repo-root placement post-restore (it was not
-  a guard stash entry) + its off-structure content; not directly observed being
-  written there. Antigravity's own run transcript would settle it. **Key upside:
-  the guard worked** — during the run the root held only `antigravity/c-mcp/run-1`,
-  everything sensitive stashed outside the tree, so the out-of-dir write hit an
-  empty tree, not the grader/spec/siblings. Validates the move-not-zip isolation.
+- **AG-C1-01 — RETRACTED (was: stray `example/` scaffold at repo root).** Logged
+  2026-07-09 as a hedged working-dir violation by the run-1 subject; the user then
+  clarified the scaffold came from the user working with a DIFFERENT AI by accident
+  — not from the run. Attribution wrong → retracted; the archived copy
+  (`antigravity/archive/c-mcp-run-1-stray-example/`) removed. Residual lesson: the
+  guard held during the run window (root = `antigravity/c-mcp/run-1` only), and any
+  root-level write by ANYONE lands visibly in `git status` at restore time — which
+  is how this was caught. Do not count against config C.
+- **c-mcp run-2 built (2026-07-09, directed-context variant), ungraded.**
+  Prompt v2.2-C: same v2.1 brief + a "Framework knowledge" block directing the
+  agent to use ONLY the MCP `tina4_context` retrieval tool for framework knowledge
+  and to write all application code itself (no tina4_code/review/chat codegen).
+  Port 7032. **Comparability split inside config C (deliberate, user decision):
+  run-1 = bare v2.1 (undirected MCP discovery), runs 2–3 = directed-context
+  v2.2-C.** Session burn: meter 96% → 70% = **~26 points** (pre-run meter noted
+  live before start). Wall-clock duration TBD (user's timed segments pending).
+  Build shape at a glance: pyproject + uv.lock (Python, on-pin), migrations/,
+  src/, tests/, BLOG.md, plus a `plan/` dir (new — first run to leave its planning
+  artifacts); `.env`/`secrets/`/`.tina4/` all gitignore-covered.
 
 ### Framework/doc findings surfaced by v2 grader calibration (2026-07-08)
 

@@ -1,0 +1,79 @@
+{% extends "base.twig" %}
+
+{% block title %}{{ book.title }} - {{ t("book.details") }}{% endblock %}
+
+{% block content %}
+  <div style="margin-bottom: 2rem;">
+    <a href="/?lang={{ lang }}" class="btn btn-secondary">&larr; {{ t("common.back") }}</a>
+  </div>
+
+  <div class="book-detail-grid">
+    <div class="book-cover">
+      <img src="{{ book.cover_image|default('/images/default-cover.png') }}" alt="{{ book.title }} Cover">
+    </div>
+    <div class="book-info">
+      <h1>{{ book.title }}</h1>
+      <p class="author">{{ book.author }}</p>
+      
+      <div class="meta-list">
+        <span class="label">{{ t("book.year") }}:</span>
+        <span>{{ book.published_year }}</span>
+        
+        <span class="label">{{ t("book.isbn") }}:</span>
+        <span>{{ book.isbn }}</span>
+        
+        <span class="label">{{ t("book.status") }}:</span>
+        <span>
+          <span class="badge {% if book.is_available == 1 %}badge-available{% else %}badge-borrowed{% endif %}" style="position: static;">
+            {% if book.is_available == 1 %}{{ t("book.available") }}{% else %}{{ t("book.borrowed") }}{% endif %}
+          </span>
+        </span>
+      </div>
+
+      {% if session.staff_id %}
+        <div style="margin-top: auto; display: flex; gap: 1rem;">
+          <a href="/admin/loans?book_id={{ book.id }}" class="btn btn-primary">Manage Loans</a>
+          <a href="/admin/books?edit_id={{ book.id }}" class="btn btn-secondary">Edit Details</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="history-section">
+    <h2>{{ t("book.history") }}</h2>
+    {% if book.history|length > 0 %}
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Email</th>
+              <th>Borrow Date</th>
+              <th>Due Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in book.history %}
+              <tr>
+                <td>{{ loan.member.name }}</td>
+                <td>{{ loan.member.email }}</td>
+                <td>{{ loan.borrow_date }}</td>
+                <td>{{ loan.due_date }}</td>
+                <td>
+                  {% if loan.returned == 1 %}
+                    <span class="badge badge-available" style="position: static; font-size: 0.7rem; padding: 0.2rem 0.5rem;">Returned</span>
+                  {% else %}
+                    <span class="badge badge-borrowed" style="position: static; font-size: 0.7rem; padding: 0.2rem 0.5rem;">Out</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: #9ca3af; font-style: italic;">{{ t("book.no_history") }}</p>
+    {% endif %}
+  </div>
+{% endblock %}

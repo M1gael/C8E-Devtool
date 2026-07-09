@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ t("catalogue.title") }}{% endblock %} - Lend</title>
+  <link rel="stylesheet" href="/css/style.css">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+        </svg>
+        Lend
+      </a>
+      
+      <nav>
+        <a href="/" class="nav-link {% if url == '/' %}active{% endif %}">{{ t("nav.catalogue") }}</a>
+        {% if session.staff_id %}
+          <a href="/admin" class="nav-link {% if '/admin' in url %}active{% endif %}">{{ t("nav.admin") }}</a>
+        {% endif %}
+      </nav>
+
+      <div class="nav-controls">
+        <!-- Language Switcher -->
+        <div class="lang-selector">
+          <a href="?lang=en" class="{% if lang == 'en' %}active{% endif %}">{{ t("common.english") }}</a>
+          <a href="?lang=es" class="{% if lang == 'es' %}active{% endif %}">{{ t("common.spanish") }}</a>
+        </div>
+
+        {% if session.staff_id %}
+          <span style="color: #9ca3af; font-size: 0.9rem; font-weight: 500;">{{ session.staff_name }}</span>
+          <a href="/logout" class="btn btn-secondary btn-sm">{{ t("nav.logout") }}</a>
+        {% else %}
+          <a href="/login" class="btn btn-primary btn-sm">{{ t("nav.login") }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Lend Library. All rights reserved. Locally served on port 7032.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends "base.twig" %}
+
+{% block title %}Audit Logs - Admin{% endblock %}
+
+{% block content %}
+  <div class="admin-header">
+    <div>
+      <h1>Library Administration</h1>
+      <p style="color: #9ca3af;">Audit trail of library modifications.</p>
+    </div>
+  </div>
+
+  <!-- Admin Navigation Tabs -->
+  <div class="admin-tabs">
+    <a href="/admin">Overview</a>
+    <a href="/admin/books">Books</a>
+    <a href="/admin/members">Members</a>
+    <a href="/admin/loans">Loans & Returns</a>
+    <a href="/admin/logs" class="active">Audit Logs</a>
+  </div>
+
+  <!-- Audit Logs Table -->
+  <div class="history-section">
+    <h2>System Audit Logs</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Staff Member</th>
+            <th>Action</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td><code>{{ log.created_at }}</code></td>
+              <td><strong>{{ log.staff_name }}</strong> <span style="font-size: 0.8rem; color: #9ca3af;">(ID: {{ log.staff_id }})</span></td>
+              <td>
+                <span class="badge 
+                  {% if log.action in ['ADD_BOOK', 'ADD_MEMBER', 'RECORD_LOAN'] %}badge-available
+                  {% elseif log.action in ['DELETE_BOOK', 'DELETE_MEMBER'] %}badge-borrowed
+                  {% else %}badge-secondary{% endif %}" 
+                  style="position: static; font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td>
+                <ul style="list-style: none; font-size: 0.85rem;">
+                  {% for k, v in log.details %}
+                    <li><strong>{{ k }}:</strong> {{ v }}</li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: #9ca3af; font-style: italic;">No audit log records found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
