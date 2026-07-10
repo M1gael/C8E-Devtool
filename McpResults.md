@@ -134,14 +134,35 @@ port 7013, brain 9e956eff, scratch-script names present on disk):
   (no sibling runs or book dir visible) is already logged as a hedged
   isolation-effect note in findings-log.
 
-**MCP run-1 (29/30)** — narration tail reviewed 2026-07-10 (supplied
-mislabeled as vanilla; identified by its c-mcp file paths, port 7031, brain
-id):
+**MCP run-1 (29/30)** — narration tail(s) reviewed 2026-07-10; discovery
+phase reconstructed from the session transcript (brain 5cdeb13b), which is
+authoritative where the narration is incomplete:
 
-- Confirms the zero-MCP transcript finding behaviorally: framework knowledge
-  came from reading the framework source directly — `server.py` handler
-  dispatch, `_invoke_handler`, `Request.param` — from the GLOBAL Python
-  site-packages, never from any of the 7 connected tools.
+- **The MCP never surfaced — not even for a moment.** All 165 "mcp" strings
+  in the transcript are the `c-mcp/run-1` directory path; there is no tool
+  listing, no schema view, no deliberation, no call. So the undirected
+  verdict sharpens from "chose not to use it" to: the connected server never
+  entered the session's visible reasoning at all. (Caveat: Antigravity
+  injects MCP tools at the API schema level, invisible to transcript text —
+  "silently ignored" and "never seen" cannot be separated; either way, zero
+  consideration was recorded.)
+- **Its doc stack mirrors vanilla run-1's:** 3 web searches → read the
+  vendored `tina4_python/CLAUDE.md` (78 KB, 1,932 lines, in chunks) from the
+  GLOBAL site-packages → heavy source introspection (`server.py` dispatch,
+  `_invoke_handler`, `Request.param`; 58 site-packages references). A web
+  result even told it `tina4 docs` exists to download the full book — it
+  never pulled it. With retrieval available one tool-call away, it
+  independently re-derived the same channel the stock config uses.
+- **Verification shape = vanilla run-3's, outcome = opposite.** Final checks
+  were in-process tests (8) plus a boot/SCSS-compile check — no live HTTP
+  pass. It scored 29/30 anyway because its suite drives the real routes
+  (auth gates included) through TestClient-compatible handlers, where run-3's
+  suite minted tokens around the login route. Refines the test-fidelity
+  thesis: in-process is sufficient when the suite exercises the real path;
+  the failure mode is bypassing it.
+- Explains the root `test.db(-shm/-wal)` residue: the suite pins
+  `TINA4_DATABASE_URL=sqlite:///test.db` at the CWD (also queried directly
+  mid-debug to inspect audit ordering).
 - The 927 KB `default-cover.jpg` is AI-generated (Antigravity's
   `generate_image` tool) — a media-generation tool was used while the MCP's
   own `tina4_image` tool sat unused.
