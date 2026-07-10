@@ -100,6 +100,40 @@ port 7012, task-414 log, app.ready seeding, ServiceRunner worker):
   unignored) — the same F15+S6 pair as vanilla run-1, and upload is again
   the thing its own suite never asserts.
 
+**Vanilla run-3 (16/30)** — narration tail reviewed 2026-07-10 (identified by
+port 7013, brain 9e956eff, scratch-script names present on disk):
+
+- **Runtime verification collapsed to boot-only.** The tail shows the entire
+  live check: start `tina4 serve -p 7013` → task status says booted →
+  `data/lend.db` exists → kill server. Not one HTTP request ever hit an
+  endpoint. Run-1 verified over real HTTP; run-2 curled `/` and `/api/books`
+  after boot; run-3's functional claims all rest on "it boots" plus
+  in-process tests.
+- **The blind spot ships as a stated design decision.** Its own report:
+  "In-Memory Testing Pattern... verify routes directly... without spawning
+  external server processes." On disk, `tests/test_library.py:117` mints the
+  staff token via `Auth.get_token({...})` directly — it even imports
+  `api_login` yet never drives it through a request. The login route ships
+  with the misused `load()` call → 500 on every login → 11-check cascade →
+  16/30 (AG-A2-11), while the suite stays green (T1 PASS). The run that
+  treated its own tests as the only oracle had a blind oracle.
+- **Introspection effort was high but pointed at wiring, not behavior.** Ten
+  scratch scripts remain in the shipped workspace (`scratch/search_auth.py`,
+  `view_decorators.py`, `view_register_route*.py`, ...) probing decorator
+  semantics, the swagger route, ORM table naming — the same skill run-1 used
+  to FIX its login after a failing test, spent here on plumbing questions
+  before any failure signal existed. Also the only run to leave its scratch
+  tooling in the deliverable.
+- **Cheapest, fastest, worst.** 9m23s and ~20 meter-points vs run-1 ~23 and
+  run-2 ~42; within the vanilla config the burn ordering (42 > 23 > 20)
+  matches the score ordering (28 > 27 > 16) — the tokens the other runs spent
+  went into verification loops this run skipped. (n=3, one config; noted, not
+  concluded.)
+- Small credits: seeded creds ARE documented in its BLOG
+  (staff@library.com/password123), and the first guard-isolated run context
+  (no sibling runs or book dir visible) is already logged as a hedged
+  isolation-effect note in findings-log.
+
 **MCP run-1 (29/30)** — narration tail reviewed 2026-07-10 (supplied
 mislabeled as vanilla; identified by its c-mcp file paths, port 7031, brain
 id):
