@@ -43,6 +43,34 @@ oddity: the agent at one point addressed the operator — "Please trigger the
 `tina4_context` tool if you have specific snippets or architectural
 recommendations" — before resuming self-serve calls.
 
+### Second source: the agent's own narration (user-provided, 2026-07-09 late)
+
+The run-2 step narration from the Antigravity UI adds ground truth the
+transcript grep could not show:
+
+- **Calls 12–14 (template rendering) FAILED** — "the connection to the
+  `tina4-coder` MCP server is closed or not responding". So the tally is
+  **11 answered + 3 failed**; the server never came back during the run
+  (→ MCP-02 in findings-log).
+- **The queue context that WAS answered taught a nonexistent API** —
+  `from tina4_python.queue import Queue, Producer, Consumer` and
+  `Consumer(Queue(topic=...)).poll()`. Verified against an installed
+  tina4-python 3.13.58: `tina4_python.queue` exports only Job, Queue, and
+  backend classes; the real interface is `queue.pop()`. The run's email
+  worker + tests were first written on the MCP-served shape, its own pytest
+  run failed on the import, and one `tina4 serve` boot crashed on the
+  leftover import before the agent fixed both by `dir()` introspection
+  (→ MCP-01 in findings-log). All calls passed `language: "python"`.
+- **Local source introspection was a co-equal knowledge channel** — dozens of
+  `.venv\Scripts\python -c "... dir()/inspect.signature(...)"` probes on
+  Response, redirect, TestClient, i18n, Frond filters/globals, plus a source
+  search for "translate". The correct queue and render facts came from these,
+  not from MCP. The directed sub-mode is therefore MCP-first, not MCP-only.
+- **Why repo plan/ is empty:** implementation_plan.md, task.md,
+  walkthrough.md, a verify_pages.py script, and a browser-test video all went
+  to the session brain dir (Antigravity's sanctioned artifact location), not
+  the working dir. Product files stayed inside the working dir.
+
 ## Non-eval session (excluded)
 
 Session 3ab5424f-...: 11 `call_mcp_tool` calls, no Lend markers — this is the

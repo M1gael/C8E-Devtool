@@ -428,8 +428,9 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   v2.2-C.** Session burn: meter 96% → 70% = **~26 points** (pre-run meter noted
   live before start). Wall-clock duration TBD (user's timed segments pending).
   Build shape at a glance: pyproject + uv.lock (Python, on-pin), migrations/,
-  src/, tests/, BLOG.md, plus a `plan/` dir (new — first run to leave its planning
-  artifacts); `.env`/`secrets/`/`.tina4/` all gitignore-covered.
+  src/, tests/, BLOG.md, plus a `plan/` dir (empty — planning artifacts went to
+  Antigravity's brain dir, see the correction note under "Config C runs 1–2
+  graded"); `.env`/`secrets/`/`.tina4/` all gitignore-covered.
 
 ### Config C runs 1–2 graded (2026-07-09)
 
@@ -486,13 +487,48 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   listed; the agent never discovered or reached for any — the 29/30 build is
   pure prior model knowledge. Headline: undirected MCP = unused MCP.
   **run-2 (directed): 14 calls, all `tina4_context`, zero codegen tools** —
-  v2.2-C directive complied with in full. Retrieval-quality friction inside
-  those calls: queue imports queried 3× and template rendering 3× (agent's own
-  labels: "again", "third attempt") before the run hand-rolled its own
-  `render()` helper instead of a framework call; one mid-run oddity where the
-  agent addressed the operator ("Please trigger the `tina4_context` tool if
-  you have specific snippets..."). A third session with 11 calls is the user's
-  other-AI accident session (retracted AG-C1-01) — excluded from eval data.
+  v2.2-C directive complied with in full on the MCP side. Per the agent's own
+  narration (user-provided from the Antigravity UI, 2026-07-09 late): **11 of
+  the 14 calls were answered; the last 3 (all template-rendering) FAILED** —
+  "the connection to the `tina4-coder` MCP server is closed or not responding"
+  — after which the run hand-rolled its own `render()` helper. Queue imports
+  were queried 3× because the answers kept missing (see MCP-01). One mid-run
+  oddity: the agent addressed the operator ("Please trigger the
+  `tina4_context` tool if you have specific snippets..."). A third session
+  with 11 calls is the user's other-AI accident session (retracted AG-C1-01)
+  — excluded from eval data.
+- **MCP-01 — `tina4_context` served a queue API that does not exist in the
+  installed framework.** The retrieved context taught
+  `from tina4_python.queue import Queue, Producer, Consumer` +
+  `Consumer(Queue(topic=...)).poll()`; the run built its email worker and
+  tests on that, and its own suite failed on the import. Verified here:
+  `tina4_python.queue` (3.13.58 probe; run-2 pinned 3.13.60) exports only
+  `Job`, `Queue`, and backend classes — **no Producer, no Consumer** — and the
+  real interface is `queue.pop()`, which the agent discovered by `dir()`
+  introspection and rewrote to. All 14 calls passed `language: "python"`, so
+  this is wrong-API content for the requested language — plausibly PHP-side or
+  stale-docs grounding (origin unverified; EOD probe candidate). Cost: two
+  broken files (email_worker.py, test_lend.py), one failed `tina4 serve`
+  boot, three fix cycles.
+- **MCP-02 — tina4-coder MCP connection dropped mid-session.** Three
+  consecutive `tina4_context` calls failed near the end of the research phase
+  (agent: "closed or not responding"); no reconnect during the run.
+  Client-vs-service attribution unknown (Antigravity MCP client or
+  mcp.tina4.com). Effect: the run finished its framework research by
+  **introspecting the installed package directly** (dir/inspect.signature/
+  source search in .venv) — which it also did repeatedly AFTER retrieval on
+  auth/response/test-client shapes. Comparability nuance for the directed
+  sub-mode: run-2 is MCP-first, not MCP-only — local source introspection was
+  a co-equal knowledge channel, and it, not MCP, supplied the correct queue
+  and render facts.
+- **Correction (earlier note said run-2 "left its planning artifacts" in
+  plan/):** the repo plan/ dir is EMPTY because Antigravity routes planning
+  artifacts (implementation_plan.md, task.md, walkthrough.md, verify script,
+  browser-test video) to its own brain directory outside the repo. The
+  narration shows the agent deliberating the spec's stay-in-working-dir rule
+  and treating the brain dir as the harness's sanctioned artifact location;
+  all PRODUCT files stayed in the working dir. Observation only — not counted
+  against the run.
 - **Version skew note:** run-1 pinned tina4-python **3.13.58**, run-2 **3.13.60**
   (a-vanilla runs: 3.13.54–56). Each run graded against its own lockfile
   (faithful); cross-run comparisons carry that skew — upstream released between
