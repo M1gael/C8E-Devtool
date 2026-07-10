@@ -15,7 +15,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
-| Antigravity v1.107.0 | C — +MCP | ✓ 29/30 (bare v2.1) | ✓ 28/30 (directed-context v2.2-C, ~26% burn) | — | baselines/C-mcp/ · results-v2.json per run |
+| Antigravity v1.107.0 | C — +MCP | ✓ 29/30 (bare v2.1) | ✓ 28/30 (directed-context v2.2-C, ~26% burn) | ⛔ blocked — MCP service down (MCP-02, 2026-07-10) | baselines/C-mcp/ · results-v2.json per run · McpResults.md |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -510,11 +510,16 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   stale-docs grounding (origin unverified; EOD probe candidate). Cost: two
   broken files (email_worker.py, test_lend.py), one failed `tina4 serve`
   boot, three fix cycles.
-- **MCP-02 — tina4-coder MCP connection dropped mid-session.** Three
-  consecutive `tina4_context` calls failed near the end of the research phase
-  (agent: "closed or not responding"); no reconnect during the run.
-  Client-vs-service attribution unknown (Antigravity MCP client or
-  mcp.tina4.com). Effect: the run finished its framework research by
+- **MCP-02 — tina4-coder MCP connection dropped mid-session; full outage
+  confirmed next day.** Three consecutive `tina4_context` calls failed near
+  the end of the research phase (agent: "closed or not responding"); no
+  reconnect during the run. **2026-07-10 update:** independent probe outside
+  Antigravity — DNS resolves (mcp.tina4.com → CNAME andrevanzuydam.com →
+  41.71.84.173) but port 443 REFUSES connections; tina4.com itself is up on
+  separate infra. Attribution now leans service-side (daemon down/firewalled),
+  not the Antigravity client. **Run-3 blocked on this** (progress table
+  updated; re-probe before packing). Effect: the run finished its framework
+  research by
   **introspecting the installed package directly** (dir/inspect.signature/
   source search in .venv) — which it also did repeatedly AFTER retrieval on
   auth/response/test-client shapes. Comparability nuance for the directed
