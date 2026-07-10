@@ -1,22 +1,10 @@
 # MCP Results — tina4-coder MCP on Antigravity
 
-**Methodology.** Same task, two configurations, identical grading. Google
-Antigravity v1.107.0 (Gemini 3.5 Flash) gets a plain product brief
-(`tasks/query-spec-v2.md` — "Lend", a lending-library app; product outcomes
-only, no framework mechanism ever named) and must build it with the Tina4
-Python framework in an isolated working directory. **Vanilla** = out-of-box
-Antigravity. **MCP** = identical, plus the `tina4-coder` MCP server
-(`https://mcp.tina4.com/mcp`, 7 tools, token auth) connected. Three runs per
-configuration. Every run is graded by the same frozen 30-check grader
-(`graders/grade_lend.py`: 16 live functional + 4 production-posture + 1
-own-test-suite + 7 static idiom) on a throwaway copy; per-run adapters map
-endpoint shapes only, never check logic. MCP usage is measured from
-Antigravity's session transcripts (`call_mcp_tool` invocations), never from
-self-report. Per-run detail: `antigravity/*/run-*/results-v2.json`; usage
-evidence: `baselines/C-mcp/mcp-usage-evidence.md`.
-
-*Status: draft — MCP runs 1–2 final, run-3 blocked by the service outage
-(MCP-02 below).*
+Method: Antigravity v1.107.0 (Gemini 3.5 Flash) builds the same app from the
+same brief (`tasks/query-spec-v2.md`), 3 runs per config, one frozen 30-check
+grader. **Vanilla** = stock Antigravity. **MCP** = stock + the `tina4-coder`
+MCP server connected. MCP usage counted from session transcripts, not
+self-report.
 
 ## Sub-modes of the MCP runs (deliberate split)
 
