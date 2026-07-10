@@ -1,29 +1,24 @@
-# MCP Results — Config C (tina4-coder MCP on Antigravity)
+# MCP Results — tina4-coder MCP on Antigravity
 
-**DRAFT v0.1 — 2026-07-10.** Two of three runs complete; run-3 blocked by the
-MCP service outage (below). Numbers final for runs 1–2; interpretation
-provisional until run-3 lands.
+**Methodology.** Same task, two configurations, identical grading. Google
+Antigravity v1.107.0 (Gemini 3.5 Flash) gets a plain product brief
+(`tasks/query-spec-v2.md` — "Lend", a lending-library app; product outcomes
+only, no framework mechanism ever named) and must build it with the Tina4
+Python framework in an isolated working directory. **Vanilla** = out-of-box
+Antigravity. **MCP** = identical, plus the `tina4-coder` MCP server
+(`https://mcp.tina4.com/mcp`, 7 tools, token auth) connected. Three runs per
+configuration. Every run is graded by the same frozen 30-check grader
+(`graders/grade_lend.py`: 16 live functional + 4 production-posture + 1
+own-test-suite + 7 static idiom) on a throwaway copy; per-run adapters map
+endpoint shapes only, never check logic. MCP usage is measured from
+Antigravity's session transcripts (`call_mcp_tool` invocations), never from
+self-report. Per-run detail: `antigravity/*/run-*/results-v2.json`; usage
+evidence: `baselines/C-mcp/mcp-usage-evidence.md`.
 
-Subject: Google Antigravity v1.107.0 (Gemini 3.5 Flash) + the `tina4-coder`
-MCP server (`https://mcp.tina4.com/mcp`, portal token auth). Task:
-`tasks/query-spec-v2.md` ("Lend" lending library, plain product brief, no
-framework leads). Grader: `graders/grade_lend.py`, 30 checks (F16 · P4 · T1 ·
-S7 on the check-count scale), frozen check logic, per-run endpoint adapters.
-Full grading detail per run: `antigravity/c-mcp/run-*/results-v2.json`.
-Usage ground truth + method: `baselines/C-mcp/mcp-usage-evidence.md`.
+*Status: draft — MCP runs 1–2 final, run-3 blocked by the service outage
+(MCP-02 below).*
 
----
-
-## Setup
-
-- Server config at `~/.gemini/config/mcp_config.json` (outside the repo;
-  token never committed). Redacted snapshot: `baselines/C-mcp/`.
-- 7 tools exposed: `tina4_code`, `tina4_context`, `tina4_review`,
-  `tina4_chat`, `tina4_features`, `tina4_bug`, `tina4_image`.
-- Connectivity verified before run-1 two independent ways (JSON-RPC
-  initialize → 200 serverInfo; in-Antigravity tool listing).
-
-## Sub-modes (deliberate intra-C split)
+## Sub-modes of the MCP runs (deliberate split)
 
 | Run | Prompt | Mode | tina4-python |
 |-----|--------|------|--------------|
@@ -35,15 +30,16 @@ Usage ground truth + method: `baselines/C-mcp/mcp-usage-evidence.md`.
 
 | Config | Run 1 | Run 2 | Run 3 |
 |--------|-------|-------|-------|
-| A — vanilla | 27/30 | 28/30 | 16/30 |
-| C — +MCP | **29/30** | **28/30** | ⛔ |
+| Vanilla | 27/30 | 28/30 | 16/30 |
+| MCP | **29/30** | **28/30** | ⛔ |
 
-- run-1 (29/30): first perfect F-tier of the eval (16/16), P 4/4, T 1/1. Only
-  red: S6 — ships no .gitignore; generated `.env.local` (TINA4_SECRET)
+- MCP run-1 (29/30): first perfect F-tier of the eval (16/16), P 4/4, T 1/1.
+  Only red: S6 — ships no .gitignore; generated `.env.local` (TINA4_SECRET)
   uncovered (AG-C1-02).
-- run-2 (28/30): F 14/16, P 4/4, T 1/1, S 7/7. Reds: F15 no functional cover
-  upload — multipart accepted but ignored, and the default cover path 404s
-  since no images dir ships (AG-C2-01); F18 no API docs at all (AG-C2-02).
+- MCP run-2 (28/30): F 14/16, P 4/4, T 1/1, S 7/7. Reds: F15 no functional
+  cover upload — multipart accepted but ignored, and the default cover path
+  404s since no images dir ships (AG-C2-01); F18 no API docs at all
+  (AG-C2-02).
 
 ## Actual MCP usage (transcript-verified)
 
@@ -53,8 +49,8 @@ Usage ground truth + method: `baselines/C-mcp/mcp-usage-evidence.md`.
 | run-2 (directed) | **14** | all `tina4_context` — 11 answered + 3 failed; 0 codegen tools |
 
 The headline of the undirected mode: **available MCP ≠ used MCP.** The agent
-built its best-scoring app of the whole eval from prior model knowledge and
-never issued a single call. The directed run compiled with the directive
+built the best-scoring app of the whole eval from prior model knowledge and
+never issued a single call. The directed run complied with the directive
 (zero codegen-tool use) but ran local source introspection
 (`dir()` / `inspect.signature()` on the installed package) as a co-equal
 knowledge channel throughout — the directed sub-mode is in practice
@@ -94,7 +90,7 @@ MCP-first, not MCP-only.
 
 - No measurable score benefit from the MCP in either sub-mode on this task:
   the undirected run ignored it and set the eval's best score; the directed
-  run matched config A's best while paying a real correctness tax (MCP-01)
+  run matched the vanilla best while paying a real correctness tax (MCP-01)
   and an availability tax (MCP-02).
 - The model's prior Tina4 knowledge is strong enough on this task that
   retrieval had nothing obvious to add — the discriminating value of the MCP
@@ -113,4 +109,3 @@ MCP-first, not MCP-only.
   and inspect the returned grounding) — when service returns.
 - run-2 wall-clock segments (user-timed) outstanding; run-1 timing/burn
   unknown (built in a session that predates timing capture).
-- Config B (+devkit) still pending; A-vs-B-vs-C synthesis after.
