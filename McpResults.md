@@ -152,6 +152,15 @@ id):
 - Credentials (admin/admin123) are documented only in the session's closing
   message — not in the BLOG or any shipped file.
 
+**MCP run-2 (28/30)** — narration reviewed 2026-07-09 (the full analysis
+lives in "MCP service findings" below and
+`baselines/C-mcp/mcp-usage-evidence.md`): retrieval-first and
+directive-compliant (11 answered `tina4_context` calls, 0 codegen), bitten
+once by wrong retrieved content (MCP-01), abandoned by the server mid-run
+(MCP-02), finished on local source introspection. Verified its pages with a
+browser subagent plus a scripted HTTP pass — verification depth comparable
+to vanilla run-2.
+
 **Cross-run: the `load()` sharp edge as an MCP test case.** Four runs, four
 paths past the same framework pitfall: vanilla run-1 fell in and climbed out
 via E2E tests + source inspection; vanilla run-3 fell in and shipped it
