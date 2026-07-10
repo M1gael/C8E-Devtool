@@ -31,170 +31,35 @@ self-report.
 
 ## Worth noting
 
-*(per-run assessments from narration + shipped code + BLOG; grown as each
-run's output is reviewed)*
-
-**Vanilla run-1 (27/30)** — narration reviewed 2026-07-10 (full narration
-confirmed against brain session f4ca9444: port 7011, admin/staffpassword
-seed):
-
-- "Vanilla" is not doc-less — the framework vendors its own agent docs into
-  every install, and that is what grounded this build. Six web searches came
-  first and yielded little; the agent then read the installed package
-  wholesale: the full ~1,900-line `CLAUDE.md` that tina4-python ships as
-  package data (viewed in three chunks), then the
-  auth/router/middleware/session/request/server/messenger/i18n/queue/
-  test_client sources. The MCP context tool therefore competes with an
-  always-present in-package doc channel, not with nothing.
-- Only run of the eval with a true end-to-end suite: its tests spawn the real
-  server as a subprocess and hit it over HTTP (12 tests, confirmed in
-  `tests/test_lend.py`). That choice paid off directly — see next point.
-- It hit the exact ORM misuse that later sank vanilla run-3 to 16/30
-  (AG-A2-11): passed full SQL to `load()`, got login 500s. Because its E2E
-  tests exercise the real login route, it saw the failure, inspected the
-  framework source (`inspect.getsource(ORM.load)`), and self-corrected to
-  `Staff.select_one(...)` — shipped fixed (`src/routes/auth.py:20`). Same
-  model, same pitfall, opposite outcomes: test style was the difference
-  between 27/30 and 16/30.
-- Platform friction handled competently: Windows subprocess pipe deadlock in
-  the test runner (fixed by redirecting server output to a log file) and a
-  PORT vs TINA4_PORT env-key stumble.
-- Claim inflation: the closing report declares a bilingual UI and "ready for
-  production deployment"; graded reality is F16 FAIL (no translated string is
-  ever actually served), F15 FAIL (no upload path), S6 FAIL (secret file
-  unignored).
-
-**Vanilla run-2 (28/30)** — narration tail reviewed 2026-07-10 (identified by
-port 7012, task-414 log, app.ready seeding, ServiceRunner worker):
-
-- **Third distinct doc channel: it pulled the entire book itself.** The run
-  fetched all 38 chapters into `.tina4-docs/` via the CLI's own doc-pull
-  (present on disk, gitignored-by-design, logged per spec: self-fetching docs
-  is part of what the config IS). The narration shows chapter-level use:
-  `13-events.md` read immediately before wiring seed-on-`app.ready`,
-  `27-service-runner.md` before writing the worker. Combined with run-1
-  (vendored CLAUDE.md + source) and MCP run-2 (`tina4_context`), each run
-  self-assembled a different doc stack — the configs differ less in available
-  knowledge than in which channel the agent happens to reach for.
-- **Framework-idiom high-water mark of the eval:** credentials seeded on the
-  `app.ready` event (found by grepping the GLOBAL site-packages for the
-  hook), and the email worker is a proper ServiceRunner service — class with
-  `__call__(ctx)`, `ctx.stop_event`-driven loop, retry-capped queue
-  (`max_retries=3`). Doc-driven idiom, visibly downstream of the two chapters
-  it had just read.
-- **Auth-test fidelity, the middle of the spectrum:** suite is in-process
-  (framework `Test` base, 7 tests, 1.19s) but every staff test logs in
-  through the real `/api/staff/login` route. Run-1 tested login over real
-  HTTP; run-3 minted tokens directly and shipped login broken. Both runs that
-  exercised their login path shipped it working; the one that bypassed it
-  did not.
-- **Two framework-behavior claims ship in its report, both unverified,
-  both probe-worthy:** (a) "TestClient bypasses route middleware" → added
-  per-endpoint auth fallbacks (corroborates open finding AG-A2-08); (b) a
-  combined up+down migration file "creates and immediately drops tables" →
-  split into `.sql` / `.down.sql` pair (new claim, now queued for a probe).
-  Plus a hand-rolled dotenv bootstrap (`src/__init__.py`: `load_env()`),
-  implying `.env` wasn't loaded early enough for its import graph.
-- **Claims vs grade:** closes with all requirements satisfied; reds are F15
-  (multipart accepted but no stored cover path) and S6 (`.env.local`
-  unignored) — the same F15+S6 pair as vanilla run-1, and upload is again
-  the thing its own suite never asserts.
-
-**Vanilla run-3 (16/30)** — narration tail reviewed 2026-07-10 (identified by
-port 7013, brain 9e956eff, scratch-script names present on disk):
-
-- **Runtime verification collapsed to boot-only.** The tail shows the entire
-  live check: start `tina4 serve -p 7013` → task status says booted →
-  `data/lend.db` exists → kill server. Not one HTTP request ever hit an
-  endpoint. Run-1 verified over real HTTP; run-2 curled `/` and `/api/books`
-  after boot; run-3's functional claims all rest on "it boots" plus
-  in-process tests.
-- **The blind spot ships as a stated design decision.** Its own report:
-  "In-Memory Testing Pattern... verify routes directly... without spawning
-  external server processes." On disk, `tests/test_library.py:117` mints the
-  staff token via `Auth.get_token({...})` directly — it even imports
-  `api_login` yet never drives it through a request. The login route ships
-  with the misused `load()` call → 500 on every login → 11-check cascade →
-  16/30 (AG-A2-11), while the suite stays green (T1 PASS). The run that
-  treated its own tests as the only oracle had a blind oracle.
-- **Introspection effort was high but pointed at wiring, not behavior.** Ten
-  scratch scripts remain in the shipped workspace (`scratch/search_auth.py`,
-  `view_decorators.py`, `view_register_route*.py`, ...) probing decorator
-  semantics, the swagger route, ORM table naming — the same skill run-1 used
-  to FIX its login after a failing test, spent here on plumbing questions
-  before any failure signal existed. Also the only run to leave its scratch
-  tooling in the deliverable.
-- **Cheapest, fastest, worst.** 9m23s and ~20 meter-points vs run-1 ~23 and
-  run-2 ~42; within the vanilla config the burn ordering (42 > 23 > 20)
-  matches the score ordering (28 > 27 > 16) — the tokens the other runs spent
-  went into verification loops this run skipped. (n=3, one config; noted, not
-  concluded.)
-- Small credits: seeded creds ARE documented in its BLOG
-  (staff@library.com/password123), and the first guard-isolated run context
-  (no sibling runs or book dir visible) is already logged as a hedged
-  isolation-effect note in findings-log.
-
-**MCP run-1 (29/30)** — full narration reviewed 2026-07-10 (confirms the
-earlier transcript reconstruction of brain 5cdeb13b verbatim — web-search
-queries, CLAUDE.md chunk reads, zero-MCP all match):
-
-- **The MCP never surfaced — not for a single moment, start to finish.** The
-  complete narration runs from `pip show tina4` to the closing summary with
-  no tool listing, no schema view, no deliberation, no call; in the raw
-  transcript all 165 "mcp" strings are just the `c-mcp/run-1` directory
-  path. The undirected verdict is not "chose against it" — the connected
-  server never entered the session's visible reasoning at all. (Caveat:
-  Antigravity injects MCP tools at the API schema level, invisible to
-  transcript text — "silently ignored" and "never seen" cannot be separated;
-  either way, zero consideration was recorded.)
-- **Its research script is near-identical to vanilla run-1's, independently
-  re-derived:** CLI probe (`pip show`, `tina4 help`) → 3 web searches →
-  locate the installed package → read the vendored `tina4_python/CLAUDE.md`
-  (78 KB, 1,932 lines, three chunks) → deep source introspection (router,
-  server.py `auth_required` path, Auth class, ORM table naming, test_client,
-  queue `consume`, `background()`, i18n; 58 site-packages references). A web
-  result even told it `tina4 docs` downloads the full book — never pulled.
-  Two sessions in different configs converged on the same channel ranking
-  with the MCP sitting one tool-call away.
-- **Verification shape = vanilla run-3's, outcome = opposite.** Final checks
-  were in-process tests (8) plus a boot/SCSS-compile check — no live HTTP
-  pass. It scored 29/30 anyway because its suite drives the real routes
-  (auth gates included), and that suite did real work: three red→green
-  cycles caught the handler-signature dispatch incompatibility (path-param
-  signatures vs `(request, response)` + `request.param(...)`) and the
-  audit-ordering race. Run-3's suite minted tokens around the login route
-  and caught nothing. In-process is sufficient when the suite exercises the
-  real path; the failure mode is bypassing it.
-- Explains the root `test.db(-shm/-wal)` residue: the suite pins
-  `TINA4_DATABASE_URL=sqlite:///test.db` at the CWD (also queried directly
-  mid-debug to inspect audit ordering).
-- The 927 KB `default-cover.jpg` is AI-generated (Antigravity's
-  `generate_image` tool) — a media-generation tool was used while the MCP's
-  own `tina4_image` tool sat unused.
-- Its three headline BLOG decisions are visible in-process: handler
-  signatures standardized to `(request, response)` for TestClient
-  compatibility, audit ordering switched to `ORDER BY id DESC` after
-  observing same-second timestamps, drop-tables added to the test fixture.
-- Credentials (admin/admin123) are documented only in the session's closing
-  message — not in the BLOG or any shipped file.
-
-**MCP run-2 (28/30)** — narration reviewed 2026-07-09 (the full analysis
-lives in "MCP service findings" below and
-`baselines/C-mcp/mcp-usage-evidence.md`): retrieval-first and
-directive-compliant (11 answered `tina4_context` calls, 0 codegen), bitten
-once by wrong retrieved content (MCP-01), abandoned by the server mid-run
-(MCP-02), finished on local source introspection. Verified its pages with a
-browser subagent plus a scripted HTTP pass — verification depth comparable
-to vanilla run-2.
-
-**Cross-run: the `load()` sharp edge as an MCP test case.** Four runs, four
-paths past the same framework pitfall: vanilla run-1 fell in and climbed out
-via E2E tests + source inspection; vanilla run-3 fell in and shipped it
-(16/30); MCP run-1 never touched the ORM for login (raw SQL via
-`Database.fetch_one`); MCP run-2 — the only run that retrieved auth guidance
-from `tina4_context` — used the `load("email = ?", [email])` signature
-correctly first try. One data point in the MCP's favor on exactly the kind of
-API sharp edge retrieval should defuse; n=1, noted not concluded.
+- **Gets its framework info from the same places in every run:** web search
+  (low yield, quickly abandoned) → the ~1,900-line `CLAUDE.md` that
+  tina4-python ships inside every install → reading the framework source
+  directly. "Vanilla" is never doc-less; the MCP competes with docs already
+  in the package. One vanilla run also pulled the full 38-chapter book via
+  `tina4 docs`.
+- **Tends to ignore the MCP unless the prompt points at it:** the bare MCP
+  run made 0 calls — the tools never entered its reasoning at all — and
+  still scored best (29/30) on prior knowledge + vendored docs.
+- **When directed, the MCP was used exactly as told** (11 `tina4_context`
+  calls, no codegen) — but it referred to a queue API that does not exist
+  (`Producer`/`Consumer` + `.poll()`; real interface is `queue.pop()`). The
+  run's own tests caught it; reading the source supplied the fix. The server
+  also dropped mid-run (3 failed calls) and is still down (MCP-01/02).
+- **One point in the MCP's favor:** the only run that retrieved auth
+  guidance used the tricky `load("email = ?", ...)` signature correctly
+  first try — the same call two vanilla runs got wrong (one shipped it
+  broken). n=1.
+- **Scores tracked test fidelity, not config:** runs whose suites exercised
+  the real login path shipped working auth (27–29/30); the run that minted
+  tokens around it shipped broken login under a green suite (16/30) — also
+  the fastest, cheapest run, having skipped the verification loops the
+  others paid for.
+- **Tends to overclaim on exit:** every run ends "production ready" / "all
+  requirements satisfied"; upload and secret-file hygiene reds recur unfixed
+  across runs, and one run documents its seeded creds only in chat.
+- **Two framework-behavior claims from run narrations, unverified, probes
+  queued:** TestClient bypasses route middleware (AG-A2-08); a combined
+  up+down migration file create-then-drops tables (AG-A2-12).
 
 ## Actual MCP usage (transcript-verified)
 
