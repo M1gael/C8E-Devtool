@@ -1,133 +1,134 @@
-# MCP Results — tina4-coder MCP on Antigravity
+# Tina4 MCP Evaluation — Results (interim)
 
-Method: Antigravity v1.107.0 (Gemini 3.5 Flash) builds the same app from the
-same brief prompt, 3 runs per config, one frozen 30-check
-grader. **Vanilla** = stock Antigravity. **MCP** = stock + the `tina4-coder`
-MCP server connected. MCP usage counted from session transcripts, not
-self-report.
+**Question:** does connecting the `tina4-coder` MCP server to an AI coding
+tool make it build better Tina4 applications than the same tool out of the
+box?
 
-## Sub-modes of the MCP runs (deliberate split)
+Test subject: Google Antigravity v1.107.0 (Gemini 3.5 Flash). Five of six
+planned runs are complete; the last is blocked by an MCP server outage, so
+conclusions are provisional.
 
-| Run   | Prompt     | Mode                                                                           | tina4-python            |
-| ----- | ---------- | ------------------------------------------------------------------------------ | ----------------------- |
-| run-1 | v2.1, bare | undirected — does the agent reach for MCP on its own?                          | 3.13.58                 |
-| run-2 | v2.2-C     | directed — `tina4_context` only for framework knowledge, all code self-written | 3.13.60                 |
-| run-3 | v2.2-C     | directed (repeat)                                                              | ⛔ blocked, service down |
+## What I did, and how
+
+- **Wrote a realistic build brief** — "Lend", a community lending-library
+  app: public catalogue with search and pagination, staff sign-in, loans
+  and returns, emailed receipts that must not block the request, an audit
+  trail, two languages, an automated test suite, interactive API docs, and
+  it must also run in production mode. The brief is written purely in
+  product language — it never names a framework feature, so nothing steers
+  the agent toward or away from any tool.
+- **Ran the same brief under two configurations, three runs each:**
+  **Vanilla** = stock Antigravity. **MCP** = identical, plus the
+  tina4-coder server (7 tools) connected and verified working beforehand.
+- **Split the MCP runs deliberately:** run-1 got the bare brief — measuring
+  whether the agent reaches for the MCP on its own. Runs 2–3 add one
+  sentence directing it to source framework knowledge only from the MCP's
+  documentation-retrieval tool (`tina4_context`) and to write all code
+  itself.
+- **Isolated every run:** each build happens in a fresh directory with the
+  rest of the repository moved out of reach, so no run can crib from a
+  previous one.
+- **Graded every run with the same frozen 30-check grader** built for this
+  evaluation: it boots each app on a throwaway copy and exercises it live
+  (login with the seeded credentials, search, pagination, borrowing and
+  double-loan rejection, whether unauthenticated writes are actually
+  refused, whether data survives a restart), re-checks the critical paths
+  in production mode, runs the app's own test suite, and checks code
+  conventions. Checks never change between runs, so scores are comparable.
+- **Verified what each run actually did from Antigravity's own session
+  transcripts** — MCP usage is counted from logged tool calls, never from
+  what the agent claims. Each run's full session narration, shipped code,
+  and write-up were reviewed against each other.
 
 ## Scores
 
-| Config  | Run 1     | Run 2     | Run 3 |
-| ------- | --------- | --------- | ----- |
-| Vanilla | 27/30     | 28/30     | 16/30 |
-| MCP     | **29/30** | **28/30** | ⛔     |
+| Config  | Run 1     | Run 2     | Run 3      |
+| ------- | --------- | --------- | ---------- |
+| Vanilla | 27/30     | 28/30     | 16/30      |
+| MCP     | **29/30** | **28/30** | ⛔ blocked |
 
-- MCP run-1 (29/30): first perfect F-tier of the eval (16/16), P 4/4, T 1/1.
-  Only red: S6 — ships no .gitignore; generated `.env.local` (TINA4_SECRET)
-  uncovered (AG-C1-02).
-- MCP run-2 (28/30): F 14/16, P 4/4, T 1/1, S 7/7. Reds: F15 no functional
-  cover upload — multipart accepted but ignored, and the default cover path
-  404s since no images dir ships (AG-C2-01); F18 no API docs at all
-  (AG-C2-02).
+- MCP run-1 (29/30) is the best build of the evaluation — every live
+  functional check passed. Its one miss: it ships no `.gitignore`, leaving
+  its generated secret file uncovered.
+- MCP run-2 (28/30): cover-image upload doesn't actually work (the uploaded
+  file is ignored, and even the default cover is a broken link), and it
+  ships no API documentation.
+- Vanilla run-3 (16/30) shipped a broken login — see finding 6 for how that
+  happened under a fully green test suite.
 
-## Worth noting
+## How much the MCP was actually used
 
-- **Gets its framework info from the same places in every run:** web search
-  (low yield, quickly abandoned) → the ~1,900-line `CLAUDE.md` that
-  tina4-python ships inside every install → reading the framework source
-  directly. "Vanilla" is never doc-less; the MCP competes with docs already
-  in the package. One vanilla run also pulled the full 38-chapter book via
-  `tina4 docs`.
-- **Tends to ignore the MCP unless the prompt points at it:** the bare MCP
-  run made 0 calls — the tools never entered its reasoning at all — and
-  still scored best (29/30) on prior knowledge + vendored docs.
-- **When directed, the MCP was used exactly as told** (11 `tina4_context`
-  calls, no codegen) — but it referred to a queue API that does not exist
-  (`Producer`/`Consumer` + `.poll()`; real interface is `queue.pop()`). The
-  run's own tests caught it; reading the source supplied the fix. The server
-  also dropped mid-run (3 failed calls) and is still down (MCP-01/02).
-- **One point in the MCP's favor:** the only run that retrieved auth
-  guidance used the tricky `load("email = ?", ...)` signature correctly
-  first try — the same call two vanilla runs got wrong (one shipped it
-  broken). n=1.
-- **Scores tracked test fidelity, not config:** runs whose suites exercised
-  the real login path shipped working auth (27–29/30); the run that minted
-  tokens around it shipped broken login under a green suite (16/30) — also
-  the fastest, cheapest run, having skipped the verification loops the
-  others paid for.
-- **Tends to overclaim on exit:** every run ends "production ready" / "all
-  requirements satisfied"; upload and secret-file hygiene reds recur unfixed
-  across runs, and one run documents its seeded creds only in chat.
-- **Two framework-behavior claims from run narrations, unverified, probes
-  queued:** TestClient bypasses route middleware (AG-A2-08); a combined
-  up+down migration file create-then-drops tables (AG-A2-12).
+| Run                    | MCP calls | What happened                                                                 |
+| ---------------------- | --------- | ----------------------------------------------------------------------------- |
+| MCP run-1 (bare brief) | **0**     | The tools never entered the agent's reasoning — no mention, no call, start to finish. |
+| MCP run-2 (directed)   | **14**    | All to the documentation tool, exactly as instructed; 11 answered, 3 failed when the server dropped mid-session. |
 
-## Actual MCP usage (transcript-verified)
+## Findings
 
-| Run                | `call_mcp_tool` | Breakdown                                                     |
-| ------------------ | --------------- | ------------------------------------------------------------- |
-| run-1 (undirected) | **0**           | 7 tools connected and listed; never touched                   |
-| run-2 (directed)   | **14**          | all `tina4_context` — 11 answered + 3 failed; 0 codegen tools |
+1. **Left to itself, the agent doesn't use the MCP — and didn't need it.**
+   The bare-brief MCP run made zero calls and still produced the best app
+   of the evaluation from prior model knowledge plus the framework's own
+   bundled documentation.
+2. **The MCP competes with documentation that already ships inside the
+   framework.** Every run converged on the same information sources: a
+   quick web search (soon abandoned), then the ~1,900-line AI-oriented
+   reference (`CLAUDE.md`) that tina4-python installs with the package,
+   then reading the framework source directly. One run also downloaded the
+   full 38-chapter documentation book with the CLI's own `tina4 docs`
+   command. A "stock" agent is never actually documentation-less.
+3. **When the MCP answered, it once answered wrongly — teaching an API that
+   doesn't exist.** The retrieval tool described `Producer`/`Consumer`
+   classes with a `.poll()` method; the installed framework has neither
+   (the real call is `queue.pop()`). The run built its email worker and
+   tests on the phantom API, its own tests caught the failure, and the
+   agent recovered by reading the framework source. Cost: two broken
+   files, one failed server boot, three fix cycles. Every call had
+   requested Python explicitly, so this points at stale or cross-language
+   content on the server side (to confirm when the service returns).
+4. **The MCP service itself proved unreliable and is currently down.** It
+   passed verification the morning of 9 July, dropped mid-session that
+   evening (three consecutive failed calls, no recovery), and since
+   10 July refuses connections outright — confirmed with an independent
+   probe outside Antigravity. This blocks the final run.
+5. **One genuine point in the MCP's favor:** the framework's ORM `load()`
+   method takes a filter clause, not full SQL — a known sharp edge. The
+   only run that retrieved auth guidance from the MCP used it correctly on
+   the first try; two vanilla runs got it wrong, and one shipped its login
+   broken because of it. A single data point, but exactly the kind of
+   mistake retrieval exists to prevent.
+6. **What actually decided the scores was each run's own test design, not
+   the configuration.** Runs whose test suites exercised the real login
+   path shipped working authentication (27–29/30). The 16/30 run generated
+   auth tokens directly inside its tests, never drove its own login route,
+   verified only that the server boots — and shipped a broken front door
+   under a green suite. It was also the fastest and cheapest run: the
+   session budget the better runs spent went into verification loops.
+7. **The agent consistently overstates completion.** Every run signs off
+   "production ready" / "all requirements satisfied"; recurring unfixed
+   gaps include the cover-upload feature and secret-file hygiene, and one
+   run documents its seeded admin credentials only in the chat window, not
+   in any shipped file.
+8. **Two framework claims made by runs still need verification:** that the
+   framework's test client bypasses route middleware, and that a migration
+   file combining up- and down-SQL creates and then immediately drops its
+   tables. Both are queued as isolated probes.
 
-The headline of the undirected mode: **available MCP ≠ used MCP.** The agent
-built the best-scoring app of the whole eval from prior model knowledge and
-never issued a single call. The directed run complied with the directive
-(zero codegen-tool use) but ran local source introspection
-(`dir()` / `inspect.signature()` on the installed package) as a co-equal
-knowledge channel throughout — the directed sub-mode is in practice
-MCP-first, not MCP-only.
+## Bottom line (interim)
 
-## MCP service findings
+On this task the MCP provided no measurable quality lift: unused when
+optional, roughly score-neutral when mandated — while introducing one real
+correctness cost (the phantom queue API) and one availability cost (the
+outage). Its clearest value signal is finding 5. For the MCP to earn its
+place, the service needs to be reliable and its content version-accurate;
+its natural advantage would show on framework features newer than the
+model's knowledge or absent from the bundled docs — which this task did
+not force.
 
-- **MCP-01 — `tina4_context` served an API that does not exist in the
-  installed framework.** Queue guidance taught
-  `from tina4_python.queue import Queue, Producer, Consumer` +
-  `Consumer(...).poll()`; `tina4_python.queue` (verified on 3.13.58; run-2
-  pinned 3.13.60) exports only `Job`, `Queue`, and backend classes — the real
-  interface is `queue.pop()`. All calls passed `language: "python"`. Cost to
-  the run: email worker + tests written on the phantom API, own pytest caught
-  the ImportError, one `tina4 serve` boot crashed, three fix cycles. The
-  correct facts came from the agent's own introspection, not the server.
-  Origin (stale docs vs cross-language grounding) unverified — probe when the
-  service returns.
-- **MCP-02 — service instability, now a full outage.** Timeline:
-  - 2026-07-09 morning: initialize handshake 200, tools listed (setup check).
-  - 2026-07-09 evening, mid-run-2: three consecutive `tina4_context` calls
-    fail — "connection to the tina4-coder MCP server is closed or not
-    responding"; no reconnect for the rest of the run.
-  - 2026-07-10: independent probe (curl, outside Antigravity) — DNS resolves
-    (`mcp.tina4.com` → CNAME `andrevanzuydam.com` → 41.71.84.173) but port
-    443 **refuses connections**; `tina4.com` itself is up on separate infra.
-    The independent-client refusal shifts attribution to the service side
-    (daemon down / firewalled), not the Antigravity MCP client. **Run-3 is
-    blocked on this.**
-- **Retrieval friction (answered calls):** queue topic queried 3× with
-  progressively narrower instructions before (wrong) usable content came
-  back; template rendering never answered (the 3 failed calls) → the run
-  hand-rolled its own `render()` helper. One oddity: the agent mid-run
-  addressed the operator, asking them to "trigger the tina4_context tool".
+## Remaining work
 
-## Interpretation (provisional, n=2)
-
-- No measurable score benefit from the MCP in either sub-mode on this task:
-  the undirected run ignored it and set the eval's best score; the directed
-  run matched the vanilla best while paying a real correctness tax (MCP-01)
-  and an availability tax (MCP-02).
-- The model's prior Tina4 knowledge — reinforced by the ~1,900-line
-  `CLAUDE.md` tina4-python vendors into every install and by direct source
-  introspection — is strong enough on this task that MCP retrieval had
-  nothing obvious to add. The discriminating value of the MCP would have to
-  show on framework versions/features newer than the model cutoff or absent
-  from the vendored docs, which this task does not force.
-- Caveats before any firm claim: two runs, one task, one model; tina4-python
-  version skew across runs (3.13.54–.60); run-2's directive changed agent
-  behaviour beyond tool choice (research-then-plan pattern); scores saturate
-  near the top so headroom is thin.
-
-## Open items
-
-- run-3 (directed, port 7033) — blocked until mcp.tina4.com accepts
-  connections again; re-probe before packing.
-- MCP-01 origin probe (replay the queue instruction against the live server
-  and inspect the returned grounding) — when service returns.
-- run-2 wall-clock segments (user-timed) outstanding; run-1 timing/burn
-  unknown (built in a session that predates timing capture).
+- Final MCP run (directed) once the server accepts connections again.
+- Replay the queue question against the live server to pin down the
+  wrong-API origin (finding 3).
+- Verify the two framework claims in finding 8.
+- Complete the timing/cost comparison (two runs still missing wall-clock
+  data).
