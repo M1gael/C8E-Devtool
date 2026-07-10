@@ -12,6 +12,14 @@ measurement surface. No tokens appear below (tool-call args only).
 **`call_mcp_tool` count: 0.** Server connected, 7 tools listed to the agent,
 zero discovery, zero calls. The 29/30 build is pure prior model knowledge.
 
+Narration tail (user-provided 2026-07-10) confirms behaviorally: framework
+questions were answered by reading the installed source directly (`server.py`
+dispatch, `_invoke_handler`, `Request.param` — from the global Python
+site-packages), and the shipped `default-cover.jpg` was AI-generated with
+Antigravity's `generate_image` tool while the MCP's `tina4_image` sat unused.
+Seeded credentials appear only in the closing chat message, not in any
+shipped file.
+
 ## run-2 — session a91ed73a-ba1a-4021-9c25-87c2e38cb962 (directed v2.2-C prompt)
 
 **`call_mcp_tool` count: 14 — all `tina4_context`, zero codegen tools

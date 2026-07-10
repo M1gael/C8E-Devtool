@@ -206,7 +206,15 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   "executes route handlers directly without firing their middleware", worked around by
   duplicating the auth check inside each handler. If true, middleware-protected routes are
   untestable via TestClient as shipped — framework-behavior claim worth an isolated probe
-  (EOD queue). Claim is the agent's, unverified.
+  (EOD queue). Claim is the agent's, unverified. (2026-07-10: run-2's session narration,
+  user-supplied, repeats the claim in the same words — corroborates the report, still
+  unverified.)
+- **AG-A2-12 — second framework-behavior claim from run-2 (narration, 2026-07-10):** a
+  migration file containing both up and down SQL allegedly "creates and immediately drops
+  tables" when run, worked around by splitting into `.sql` / `.down.sql` files
+  (`migrations/20260708000100_create_library_tables{,.down}.sql` on disk). If true,
+  single-file migrations are a footgun (silent create-then-drop). Claim is the agent's,
+  unverified — same EOD probe queue as AG-A2-08.
 
 - **v2 config-A CONSENSUS (2026-07-08).** Verdict: vanilla Antigravity/Gemini builds a
   genuinely credible Tina4 app under a real task — the weakness is not code quality but

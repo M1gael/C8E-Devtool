@@ -64,6 +64,42 @@ seed):
   ever actually served), F15 FAIL (no upload path), S6 FAIL (secret file
   unignored).
 
+**Vanilla run-2 (28/30)** — narration tail reviewed 2026-07-10 (identified by
+port 7012, task-414 log, app.ready seeding, ServiceRunner worker):
+
+- **Third distinct doc channel: it pulled the entire book itself.** The run
+  fetched all 38 chapters into `.tina4-docs/` via the CLI's own doc-pull
+  (present on disk, gitignored-by-design, logged per spec: self-fetching docs
+  is part of what the config IS). The narration shows chapter-level use:
+  `13-events.md` read immediately before wiring seed-on-`app.ready`,
+  `27-service-runner.md` before writing the worker. Combined with run-1
+  (vendored CLAUDE.md + source) and MCP run-2 (`tina4_context`), each run
+  self-assembled a different doc stack — the configs differ less in available
+  knowledge than in which channel the agent happens to reach for.
+- **Framework-idiom high-water mark of the eval:** credentials seeded on the
+  `app.ready` event (found by grepping the GLOBAL site-packages for the
+  hook), and the email worker is a proper ServiceRunner service — class with
+  `__call__(ctx)`, `ctx.stop_event`-driven loop, retry-capped queue
+  (`max_retries=3`). Doc-driven idiom, visibly downstream of the two chapters
+  it had just read.
+- **Auth-test fidelity, the middle of the spectrum:** suite is in-process
+  (framework `Test` base, 7 tests, 1.19s) but every staff test logs in
+  through the real `/api/staff/login` route. Run-1 tested login over real
+  HTTP; run-3 minted tokens directly and shipped login broken. Both runs that
+  exercised their login path shipped it working; the one that bypassed it
+  did not.
+- **Two framework-behavior claims ship in its report, both unverified,
+  both probe-worthy:** (a) "TestClient bypasses route middleware" → added
+  per-endpoint auth fallbacks (corroborates open finding AG-A2-08); (b) a
+  combined up+down migration file "creates and immediately drops tables" →
+  split into `.sql` / `.down.sql` pair (new claim, now queued for a probe).
+  Plus a hand-rolled dotenv bootstrap (`src/__init__.py`: `load_env()`),
+  implying `.env` wasn't loaded early enough for its import graph.
+- **Claims vs grade:** closes with all requirements satisfied; reds are F15
+  (multipart accepted but no stored cover path) and S6 (`.env.local`
+  unignored) — the same F15+S6 pair as vanilla run-1, and upload is again
+  the thing its own suite never asserts.
+
 **MCP run-1 (29/30)** — narration tail reviewed 2026-07-10 (supplied
 mislabeled as vanilla; identified by its c-mcp file paths, port 7031, brain
 id):
