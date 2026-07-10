@@ -134,32 +134,37 @@ port 7013, brain 9e956eff, scratch-script names present on disk):
   (no sibling runs or book dir visible) is already logged as a hedged
   isolation-effect note in findings-log.
 
-**MCP run-1 (29/30)** — narration tail(s) reviewed 2026-07-10; discovery
-phase reconstructed from the session transcript (brain 5cdeb13b), which is
-authoritative where the narration is incomplete:
+**MCP run-1 (29/30)** — full narration reviewed 2026-07-10 (confirms the
+earlier transcript reconstruction of brain 5cdeb13b verbatim — web-search
+queries, CLAUDE.md chunk reads, zero-MCP all match):
 
-- **The MCP never surfaced — not even for a moment.** All 165 "mcp" strings
-  in the transcript are the `c-mcp/run-1` directory path; there is no tool
-  listing, no schema view, no deliberation, no call. So the undirected
-  verdict sharpens from "chose not to use it" to: the connected server never
-  entered the session's visible reasoning at all. (Caveat: Antigravity
-  injects MCP tools at the API schema level, invisible to transcript text —
-  "silently ignored" and "never seen" cannot be separated; either way, zero
-  consideration was recorded.)
-- **Its doc stack mirrors vanilla run-1's:** 3 web searches → read the
-  vendored `tina4_python/CLAUDE.md` (78 KB, 1,932 lines, in chunks) from the
-  GLOBAL site-packages → heavy source introspection (`server.py` dispatch,
-  `_invoke_handler`, `Request.param`; 58 site-packages references). A web
-  result even told it `tina4 docs` exists to download the full book — it
-  never pulled it. With retrieval available one tool-call away, it
-  independently re-derived the same channel the stock config uses.
+- **The MCP never surfaced — not for a single moment, start to finish.** The
+  complete narration runs from `pip show tina4` to the closing summary with
+  no tool listing, no schema view, no deliberation, no call; in the raw
+  transcript all 165 "mcp" strings are just the `c-mcp/run-1` directory
+  path. The undirected verdict is not "chose against it" — the connected
+  server never entered the session's visible reasoning at all. (Caveat:
+  Antigravity injects MCP tools at the API schema level, invisible to
+  transcript text — "silently ignored" and "never seen" cannot be separated;
+  either way, zero consideration was recorded.)
+- **Its research script is near-identical to vanilla run-1's, independently
+  re-derived:** CLI probe (`pip show`, `tina4 help`) → 3 web searches →
+  locate the installed package → read the vendored `tina4_python/CLAUDE.md`
+  (78 KB, 1,932 lines, three chunks) → deep source introspection (router,
+  server.py `auth_required` path, Auth class, ORM table naming, test_client,
+  queue `consume`, `background()`, i18n; 58 site-packages references). A web
+  result even told it `tina4 docs` downloads the full book — never pulled.
+  Two sessions in different configs converged on the same channel ranking
+  with the MCP sitting one tool-call away.
 - **Verification shape = vanilla run-3's, outcome = opposite.** Final checks
   were in-process tests (8) plus a boot/SCSS-compile check — no live HTTP
   pass. It scored 29/30 anyway because its suite drives the real routes
-  (auth gates included) through TestClient-compatible handlers, where run-3's
-  suite minted tokens around the login route. Refines the test-fidelity
-  thesis: in-process is sufficient when the suite exercises the real path;
-  the failure mode is bypassing it.
+  (auth gates included), and that suite did real work: three red→green
+  cycles caught the handler-signature dispatch incompatibility (path-param
+  signatures vs `(request, response)` + `request.param(...)`) and the
+  audit-ordering race. Run-3's suite minted tokens around the login route
+  and caught nothing. In-process is sufficient when the suite exercises the
+  real path; the failure mode is bypassing it.
 - Explains the root `test.db(-shm/-wal)` residue: the suite pins
   `TINA4_DATABASE_URL=sqlite:///test.db` at the CWD (also queried directly
   mid-debug to inspect audit ordering).
