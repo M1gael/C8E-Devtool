@@ -15,7 +15,7 @@ finding). Harness/assist-layer findings (devkit installer, MCP service) use
 | Antigravity v1.107.0 | A — vanilla (v1 CRUD, archived) | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | ✓ 9/9 · 6/6 | a-vanilla-v1/ |
 | Antigravity v1.107.0 | A — vanilla (v2 Lend) | ✓ 27/30 | ✓ 28/30 | ✓ 16/30 (3rd attempt, guard.py-isolated; login 500s → 11-check cascade, AG-A2-11) | a-vanilla/ · results-v2.json per run |
 | Antigravity v1.107.0 | B — +devkit | — | — | — | (pending; user chose to run C first) |
-| Antigravity v1.107.0 | C — +MCP | ✓ 29/30 (bare v2.1) | ✓ 28/30 (directed-context v2.2-C, ~26% burn) | ⛔ blocked — MCP service down (MCP-02, 2026-07-10) | baselines/C-mcp/ · results-v2.json per run · McpResults.md |
+| Antigravity v1.107.0 | C — +MCP | ✓ 29/30 (bare v2.1, 18m32s) | ✓ 28/30 (directed-context v2.2-C, 17m41s/~26% burn) | ⛔ blocked — MCP service down (MCP-02, 2026-07-10) | baselines/C-mcp/ · results-v2.json per run · McpResults.md |
 
 Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
@@ -442,6 +442,12 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
 
 ### Config C runs 1–2 graded (2026-07-09)
 
+- **Timing/burn (config C; wall-clock user-supplied 2026-07-20).** run-1 **18m 32s**
+  wall, burn NOT captured (IDE meter only — owed). run-2 **17m 41s** wall, **~26%**
+  burn. Same prompt-paste→done method as config A. vs config A: run-1 22m14s/≈23%,
+  run-2 21m0s/≈42%, run-3 9m23s/≈20%. Single-run note (n=1, different builds): MCP
+  run-2 was faster AND cheaper than vanilla run-2 (17m41s/26% vs 21m0s/42%) despite
+  14 `tina4_context` calls. run-3 not run.
 - **c-mcp GRADED: run-1 29/30 (bare v2.1) · run-2 28/30 (directed v2.2-C).**
   run-1: F **16/16** (first perfect F-tier of the whole eval) · P 4/4 · T 1/1 · S 6/7.
   run-2: F 14/16 · P 4/4 · T 1/1 · S 7/7. Config A for comparison: 27 · 28 · 16.
@@ -468,10 +474,16 @@ Statuses: — not started · ▶ in progress · ✓ graded · ⛔ blocked
   stdlib unittest at its real location — `uv run python -m unittest discover -s
   src/test -v` → 8/8 OK. test_cmd adapter now invokes exactly that; per the
   grader's frozen rule, runner unavailability is never scored as a red suite.
-- **AG-C1-02 — run-1 ships NO .gitignore; secret-bearing `.env.local` unignored
-  (S6, the run's only red).** `.env.local` carries the generated TINA4_SECRET and
-  nothing in the run covers it. (The eval repo's root .gitignore happens to cover
-  it here, but the run is graded as a standalone product.)
+- **AG-C1-02 — run-1's `.gitignore` covers `.env` but omits `.env.local`; the
+  secret-bearing `.env.local` is left unignored (S6, the run's only red).** run-1
+  DOES ship a `.gitignore` (`.venv/`, `__pycache__/`, `*.pyc`, `*.pyo`, `data/`,
+  `logs/`, `secrets/`, `.env`), but the framework wrote `TINA4_SECRET` to
+  `.env.local`, which the exact `.env` rule does not match (needs `.env*`).
+  `.env` itself holds only `TINA4_DEBUG`/`TINA4_LOG_LEVEL` (non-secret). Same
+  failure mode as AG-A-06 — near-miss glob, not absent hygiene. (The eval repo's
+  root .gitignore happens to cover it here, but the run is graded as a standalone
+  product.) [Corrected 2026-07-20: earlier entry wrongly said "ships NO
+  .gitignore" — verified against run dir; a `.gitignore` is present.]
 - **AG-C1-03 — run-1's suite is not executable by the canonical runner.** pytest
   never declared in pyproject; suite is stdlib-unittest at `src/test/` (book ch18
   convention is pytest over `tests/` — run-1's root tests/ exists but is EMPTY);

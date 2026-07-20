@@ -5,8 +5,8 @@ tool make it build better Tina4 applications than the same tool out of the
 box?
 
 Test subject: Google Antigravity v1.107.0 (Gemini 3.5 Flash). Five of six
-planned runs are complete; the last is blocked by an MCP server outage, so
-conclusions are provisional.
+planned runs are complete; the last is still pending, so conclusions are
+provisional.
 
 ## What I did, and how
 
@@ -45,11 +45,13 @@ conclusions are provisional.
 | Config  | Run 1     | Run 2     | Run 3      |
 | ------- | --------- | --------- | ---------- |
 | Vanilla | 27/30     | 28/30     | 16/30      |
-| MCP     | **29/30** | **28/30** | ⛔ blocked |
+| MCP     | **29/30** | **28/30** | pending    |
 
 - MCP run-1 (29/30) is the best build of the evaluation — every live
-  functional check passed. Its one miss: it ships no `.gitignore`, leaving
-  its generated secret file uncovered.
+  functional check passed. Its one miss: its `.gitignore` covers `.env` but
+  not `.env.local`, and the framework wrote the real secret to `.env.local` —
+  so the secret file is left tracked. A near-miss on hygiene (the glob needed
+  `.env*`), not absent hygiene.
 - MCP run-2 (28/30): cover-image upload doesn't actually work (the uploaded
   file is ignored, and even the default cover is a broken link), and it
   ships no API documentation.
@@ -85,11 +87,12 @@ conclusions are provisional.
    files, one failed server boot, three fix cycles. Every call had
    requested Python explicitly, so this points at stale or cross-language
    content on the server side (to confirm when the service returns).
-4. **The MCP service itself proved unreliable and is currently down.** It
-   passed verification the morning of 9 July, dropped mid-session that
-   evening (three consecutive failed calls, no recovery), and since
-   10 July refuses connections outright — confirmed with an independent
-   probe outside Antigravity. This blocks the final run.
+4. **The MCP dropped calls mid-session.** In run-2's burst of 14
+   documentation calls, three consecutive calls late in the run went
+   unanswered — the connection to the server closed and did not recover
+   within that session. So 11 of the 14 calls answered and 3 failed in
+   flight. A reliability blip during active use, not something the agent
+   caused.
 5. **One genuine point in the MCP's favor:** the framework's ORM `load()`
    method takes a filter clause, not full SQL — a known sharp edge. The
    only run that retrieved auth guidance from the MCP used it correctly on
@@ -117,8 +120,8 @@ conclusions are provisional.
 
 On this task the MCP provided no measurable quality lift: unused when
 optional, roughly score-neutral when mandated — while introducing one real
-correctness cost (the phantom queue API) and one availability cost (the
-outage). Its clearest value signal is finding 5. For the MCP to earn its
+correctness cost (the phantom queue API) and one reliability cost (calls
+dropped mid-session). Its clearest value signal is finding 5. For the MCP to earn its
 place, the service needs to be reliable and its content version-accurate;
 its natural advantage would show on framework features newer than the
 model's knowledge or absent from the bundled docs — which this task did
@@ -126,7 +129,7 @@ not force.
 
 ## Remaining work
 
-- Final MCP run (directed) once the server accepts connections again.
+- Final MCP run (directed) — still pending.
 - Replay the queue question against the live server to pin down the
   wrong-API origin (finding 3).
 - Verify the two framework claims in finding 8.
